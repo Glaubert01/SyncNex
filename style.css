@@ -1079,3 +1079,254 @@ body {
   .construcao-txt { font-size: 1.1rem; }
 }
 
+.kanban-summary {
+  margin: 32px auto 0 auto;
+  width: 80%;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px #0002;
+  padding: 18px 16px 8px 16px;
+  overflow-x: auto;
+}
+.kanban-summary table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #222;
+  font-size: 1rem;
+}
+.kanban-summary th, .kanban-summary td {
+  border-bottom: 1px solid #e4e4e4;
+  padding: 8px 10px;
+  text-align: center;
+}
+.kanban-summary th {
+  background: #f3f4f6;
+  font-weight: 700;
+  color: #333;
+}
+.kanban-summary td {
+  font-weight: 500;
+  color: #222;
+}
+.kanban-summary td:first-child,
+.kanban-summary th:first-child {
+  text-align: left;
+  padding-left: 24px;
+}
+@media (max-width: 900px) {
+  .kanban-summary { width: 98%; font-size: 0.91rem; }
+}
+
+/* DARK MODE */
+body.dark-mode .kanban-summary {
+  background: #20232aee;
+  box-shadow: 0 2px 10px #0004;
+}
+body.dark-mode .kanban-summary table {
+  color: #fff;
+}
+body.dark-mode .kanban-summary th, 
+body.dark-mode .kanban-summary td {
+  border-bottom: 1px solid #393e4d;
+}
+body.dark-mode .kanban-summary th {
+  background: #181a1b;
+  color: #ffe144;
+}
+body.dark-mode .kanban-summary td {
+  color: #fff;
+}
+
+/* ========================= */
+/* FORM ADICIONAR CARD */
+.add-card-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 6px 4px;
+}
+
+.add-card-form input[type="text"],
+.add-card-form input[type="date"],
+.add-card-form input[type="number"] {
+  flex: 2 1 0;
+  min-width: 0;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 3px;
+  border: 1px solid #b0b0b0;
+  background: #fff;
+  color: #222;
+}
+
+.add-card-form input[type="text"] { flex: 3 1 0; }
+.add-card-form input[type="date"] { flex: 2 1 0; max-width: 110px; }
+.add-card-form input[type="number"] { flex: 1 1 0; max-width: 60px; }
+
+.add-card-form input[type="text"]::placeholder,
+.add-card-form input[type="date"]::placeholder {
+  color: #999;
+}
+
+/* Botão "+" modo claro */
+.add-card-form button[type="submit"] {
+  flex: 0 0 auto;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 22px;
+  background: #0076be;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.add-card-form button[type="submit"]:hover {
+  background: #005489;
+}
+
+/* DARK MODE inputs/form */
+body.dark-mode .add-card-form input[type="text"],
+body.dark-mode .add-card-form input[type="date"],
+body.dark-mode .add-card-form input[type="number"] {
+  background: #222831;
+  color: #eee;
+  border: 1px solid #333;
+}
+body.dark-mode .add-card-form input[type="text"]::placeholder,
+body.dark-mode .add-card-form input[type="date"]::placeholder {
+  color: #bbb;
+}
+body.dark-mode .add-card-form button[type="submit"] {
+  background: #444b6e;
+  color: #ffe144;
+}
+body.dark-mode .add-card-form button[type="submit"]:hover {
+  background: #222831;
+}
+
+.footer {
+  width: 100%;
+  background: #fff;
+  color: #333;
+  padding: 16px 0 8px 0;
+  box-shadow: 0 -2px 14px #0001;
+  position: relative;
+  z-index: 10;
+}
+
+.footer-content {
+  width: 96%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.footer-logo-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-logo {
+  height: 44px;
+  width: 44px;
+}
+
+.footer-title {
+  display: block;
+  font-weight: bold;
+  font-size: 18px;
+  color: #0076be;
+}
+
+.footer-slogan {
+  display: block;
+  font-size: 13px;
+  color: #666;
+  margin-top: 1px;
+}
+
+.footer-nav {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.footer-nav a {
+  text-decoration: none;
+  color: #444;
+  font-weight: 500;
+  font-size: 15px;
+  transition: color 0.2s;
+}
+
+.footer-nav a:hover {
+  color: #0076be;
+}
+
+.versao {
+  font-size: 13px;
+  color: #888;
+  margin-left: 12px;
+}
+
+/* ---- DARK MODE ---- */
+body.dark-mode .footer {
+  background: #1b1c22;
+  color: #eee;
+  box-shadow: 0 -2px 16px #000a;
+}
+
+body.dark-mode .footer-title {
+  color: #ffe144;
+}
+
+body.dark-mode .footer-slogan {
+  color: #bbb;
+}
+
+body.dark-mode .footer-nav a {
+  color: #fff;
+}
+
+body.dark-mode .footer-nav a:hover {
+  color: #ffe144;
+}
+
+body.dark-mode .versao {
+  color: #ffe144;
+}
+
+
+
+.footer-content > * {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 32px 0 #1976d240, 0 0.5px 0 #4da3ff; /* sombra azul intensa */
+  padding: 9px 22px;
+  margin: 0 12px;
+  display: flex;
+  align-items: center;
+  transition: box-shadow 0.2s;
+}
+
+body.dark-mode .footer-content > * {
+  background: #23242a;
+  box-shadow: 0 2px 16px 0 #53b5ff7d, 0 0.5px 0 #3a7ce4; /* azul mais vibrante no dark */
+}
+
+@media (max-width: 900px) {
+  .footer-content > * {
+    background: transparent;
+    box-shadow: none;
+    padding: 8px 0;
+    margin: 2px 0;
+  }
+}

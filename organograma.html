@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SyncNex - CSN</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="../assets/syncnex-favicon.png">
+</head>
+<body>
+    <button id="toggle-mode" class="darkmode-btn" title="Alternar modo escuro">
+    🌓
+    </button>
+  <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu">&#9776;</button>
+  <div class="container">
+    <aside class="sidebar" id="sidebar">
+      <a href="index.html">
+        <img src="https://upload.wikimedia.org/wikipedia/pt/e/eb/Companhia_Sider%C3%BArgica_Nacional.png" alt="Logo CSN" class="logo-csn" />
+      </a>
+      <ul class="menu">
+        <li><a href="absenteismo.html">Absenteismo</a></li>
+        <li><a href="contratos.html">Contratos</a></li>
+        <li><a href="dgfm.html">DGFM</a></li>
+        <li><a href="diesel.html">Diesel</a></li>
+        <li><a href="efetivo.html">Efetivo</a></li>
+        <li><a href="horaextra.html">Horas Extras</a></li>
+        <li><a href="kanban.html">Kanban</a></li>
+        <li><a href="mttr.html">MTTR</a></li>
+        <li><a href="mtbf.html">MTBF</a></li>
+        <li class="menu__item"><a href="organograma.html">Organograma</a></li>                           
+        <li><a href="projetos.html">Projetos</a></li>
+      </ul>
+    </aside>
+
+    <main class="main-content">
+      <h2 class="titulo">Organograma de Atividades Staffs GIL</h2>
+      <div class="table-container">
+        <table id="organograma"></table>
+      </div>
+
+      <div class="controls">
+        <button id="edit-mode-btn" onclick="toggleEditMode()">Editar</button>
+        <button onclick="addPessoa()">Adicionar Pessoa</button>
+        <button onclick="addPilar()">Adicionar Pilar</button>
+        <button onclick="salvar()">Salvar</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let editMode = false;
+    let visibilidade = {};
+    let data = JSON.parse(localStorage.getItem("organograma")) || {
+      pessoas: ["Glaubert", "Sergio", "Daiana"],
+      pilares: ["Pilar A", "Pilar B", "Pilar C"],
+      atividades: [
+        ["Atividade A1", "Atividade A2", "Atividade A3"],
+        ["Atividade B1", "Atividade B2", "Atividade B3"],
+        ["Atividade C1", "Atividade C2", "Atividade C3"]
+      ]
+    };
+
+    function renderTable() {
+      const table = document.getElementById("organograma");
+      table.innerHTML = "";
+      const thead = document.createElement("thead");
+      const trHead = document.createElement("tr");
+      trHead.innerHTML = `<th>Pilares / Pessoas</th>`;
+      data.pessoas.forEach((nome, idx) => {
+        trHead.innerHTML += `<th class="person" onclick="toggleActivities(${idx})">
+          <span class="editable" contenteditable="${editMode}" oninput="updateNome(${idx}, this.innerText)">${nome}</span>
+          ${editMode ? `<button onclick="event.stopPropagation(); removerPessoa(${idx})">❌</button>` : ""}
+        </th>`;
+      });
+      thead.appendChild(trHead);
+
+      const tbody = document.createElement("tbody");
+      data.pilares.forEach((pilar, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td class="pillar">
+          <span class="editable" contenteditable="${editMode}" oninput="updatePilar(${i}, this.innerText)">${pilar}</span>
+          ${editMode ? `<button onclick="removerPilar(${i})">❌</button>` : ""}
+        </td>`;
+        data.pessoas.forEach((_, j) => {
+          const atividade = data.atividades[i]?.[j] || "";
+          const hidden = !visibilidade[j] ? "hidden" : "";
+          tr.innerHTML += `<td class="activity ${hidden}" data-col="${j}">
+            <span class="editable" contenteditable="${editMode}" oninput="updateAtividade(${i}, ${j}, this.innerText)">${atividade}</span>
+            ${editMode ? `<button onclick="removerAtividade(${i}, ${j})">❌</button>` : ""}
+          </td>`;
+        });
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(thead);
+      table.appendChild(tbody);
+    }
+
+    function toggleEditMode() {
+      editMode = !editMode;
+      renderTable();
+      const editBtn = document.getElementById("edit-mode-btn");
+      if (editBtn) editBtn.textContent = editMode ? "Salvar" : "Editar";
+      if (!editMode) salvar();
+    }
+
+    function toggleActivities(colIndex) {
+      visibilidade[colIndex] = !visibilidade[colIndex];
+      renderTable();
+    }
+
+    function updateNome(index, valor) {
+      data.pessoas[index] = valor;
+    }
+
+    function updatePilar(index, valor) {
+      data.pilares[index] = valor;
+    }
+
+    function updateAtividade(i, j, valor) {
+      if (!data.atividades[i]) data.atividades[i] = [];
+      data.atividades[i][j] = valor;
+    }
+
+    function addPessoa() {
+      const nome = prompt("Nome da nova pessoa:");
+      if (nome) {
+        data.pessoas.push(nome);
+        data.atividades.forEach(row => row.push(""));
+        renderTable();
+      }
+    }
+
+    function addPilar() {
+      const nome = prompt("Nome do novo pilar:");
+      if (nome) {
+        data.pilares.push(nome);
+        const novaLinha = data.pessoas.map(() => "");
+        data.atividades.push(novaLinha);
+        renderTable();
+      }
+    }
+
+    function removerPessoa(index) {
+      data.pessoas.splice(index, 1);
+      data.atividades.forEach(row => row.splice(index, 1));
+      renderTable();
+    }
+
+    function removerPilar(index) {
+      data.pilares.splice(index, 1);
+      data.atividades.splice(index, 1);
+      renderTable();
+    }
+
+    function removerAtividade(i, j) {
+      if (data.atividades[i]) {
+        data.atividades[i][j] = "";
+        renderTable();
+      }
+    }
+
+    function salvar() {
+      localStorage.setItem("organograma", JSON.stringify(data));
+      alert("Salvo com sucesso!");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const toggleButton = document.getElementById("toggle-mode");
+      if (toggleButton) {
+        toggleButton.addEventListener("click", () => {
+          document.body.classList.toggle("dark-mode");
+        });
+      }
+      renderTable();
+    });
+  </script>
+
+  <script>
+  const menuToggle = document.getElementById('menu-toggle');
+  const sidebar = document.getElementById('sidebar');
+
+  menuToggle.addEventListener('click', function () {
+    sidebar.classList.toggle('active');
+  });
+
+  // Fecha sidebar ao clicar fora dela
+  document.addEventListener('click', function (e) {
+    if (
+      window.innerWidth <= 768 &&
+      sidebar.classList.contains('active') &&
+      !sidebar.contains(e.target) &&
+      !menuToggle.contains(e.target)
+    ) {
+      sidebar.classList.remove('active');
+    }
+  });
+</script>
+
+<script src="/Organograma--main/darkmode.js"></script>
+</body>
+
+<footer class="footer">
+  <div class="footer-content">
+    <div class="footer-logo-group">
+      <img src="../assets/syncnex-logo-64x64.png" alt="Logo SyncNex" class="footer-logo" />
+      <div>
+        <span class="footer-title">SyncNex &copy; 2025</span>
+        <span class="footer-slogan">Conectando eficiência ao seu negócio</span>
+      </div>
+    </div>
+    <nav class="footer-nav">
+      <a href="#">Sobre Nós</a>
+      <a href="#">Contato</a>
+      <a href="#">Política de Privacidade</a>
+      <a href="#">Termos de Uso</a>
+    </nav>
+  </div>
+</footer>
+</html>
+

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SyncNex - CSN</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="../assets/syncnex-favicon.png">
+</head>
+<body>
+  <button id="toggle-mode" class="darkmode-btn" title="Alternar modo escuro">🌓</button>
+  <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu">&#9776;</button>
+  <div class="container">
+    <aside class="sidebar" id="sidebar">
+      <a href="index.html">
+        <img src="https://upload.wikimedia.org/wikipedia/pt/e/eb/Companhia_Sider%C3%BArgica_Nacional.png" alt="Logo CSN" class="logo-csn" />
+      </a>
+      <ul class="menu">
+        <li><a href="absenteismo.html">Absenteismo</a></li>
+        <li><a href="contratos.html">Contratos</a></li>
+        <li><a href="dgfm.html">DGFM</a></li>
+        <li><a href="diesel.html">Diesel</a></li>
+        <li><a href="efetivo.html">Efetivo</a></li>
+        <li><a href="horaextra.html">Horas Extras</a></li>
+        <li><a href="kanban.html">Kanban</a></li>
+        <li><a href="mttr.html">MTTR</a></li>
+        <li><a href="mtbf.html">MTBF</a></li>
+        <li class="menu__item"><a href="organograma.html">Organograma</a></li>                           
+        <li><a href="projetos.html">Projetos</a></li>
+      </ul>
+    </aside>
+
+    <!-- Novo Kanban moderno -->
+    <main class="main-content">
+      <h2 class="titulo">Kanban - Atividades</h2>
+      <div class="kanban-board">
+        <!-- Coluna: A Fazer -->
+        <section class="kanban-column to-do">
+          <header>A FAZER</header>
+          <div class="kanban-card">
+            <h4>3D: Criação de Peças</h4>
+            <ul>
+              <li>Desenho</li>
+              <li>Protótipo</li>
+              <li>Acabamento</li>
+            </ul>
+          </div>
+          <div class="kanban-card">
+            <h4>TI: Criação de Landing Page</h4>
+            <ul>
+              <li>Layout</li>
+              <li>Publicação</li>
+            </ul>
+          </div>
+        </section>
+        <!-- Coluna: Fazendo -->
+        <section class="kanban-column doing">
+          <header>FAZENDO</header>
+          <div class="kanban-card">
+            <h4>Social Media: MKT Influência</h4>
+            <ul>
+              <li>Briefing</li>
+              <li>Postagens</li>
+            </ul>
+          </div>
+        </section>
+        <!-- Coluna: Em Análise -->
+        <section class="kanban-column analyzing">
+          <header>EM ANÁLISE</header>
+          <div class="kanban-card">
+            <h4>TI: Desenvolvimento de Site</h4>
+            <ul>
+              <li>Design UX</li>
+              <li>Testes</li>
+            </ul>
+          </div>
+        </section>
+        <!-- Coluna: Pausado -->
+        <section class="kanban-column paused">
+          <header>PAUSADO</header>
+          <div class="kanban-card">
+            <h4>MKT: Trabalho</h4>
+            <ul>
+              <li>Briefing</li>
+            </ul>
+          </div>
+        </section>
+        <!-- Coluna: Concluído -->
+        <section class="kanban-column done">
+          <header>CONCLUÍDO</header>
+          <div class="kanban-card">
+            <h4>Compras: Orçamento</h4>
+            <ul>
+              <li>Coleta</li>
+              <li>Pedido</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </main>
+    <!-- FIM main-content -->
+  </div>
+
+  <script>
+    const menuToggle = document.getElementById('menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+
+    menuToggle.addEventListener('click', function () {
+      sidebar.classList.toggle('active');
+    });
+
+    // Fecha sidebar ao clicar fora dela
+    document.addEventListener('click', function (e) {
+      if (
+        window.innerWidth <= 768 &&
+        sidebar.classList.contains('active') &&
+        !sidebar.contains(e.target) &&
+        !menuToggle.contains(e.target)
+      ) {
+        sidebar.classList.remove('active');
+      }
+    });
+  </script>
+
+  <script src="/Organograma--main/darkmode.js"></script>
+</body>
+
+<footer class="footer">
+  <div class="footer-content">
+    <div class="footer-logo-group">
+      <img src="../assets/syncnex-logo-64x64.png" alt="Logo SyncNex" class="footer-logo" />
+      <div>
+        <span class="footer-title">SyncNex &copy; 2025</span>
+        <span class="footer-slogan">Conectando eficiência ao seu negócio</span>
+      </div>
+    </div>
+    <nav class="footer-nav">
+      <a href="#">Sobre Nós</a>
+      <a href="#">Contato</a>
+      <a href="#">Política de Privacidade</a>
+      <a href="#">Termos de Uso</a>
+    </nav>
+  </div>
+</footer>
+</html>

@@ -16,7 +16,7 @@
   <div class="container">
     <aside class="sidebar" id="sidebar">
       <a href="index.html">
-        <img src="assets/logo-csn.png" alt="Logo CSN" class="logo-csn" />
+        <img src="/assets/logo-csn.png" alt="Logo CSN" class="logo-csn" />
       </a>
       <ul class="menu">
         <li><a href="absenteismo.html">Absenteismo</a></li>
@@ -61,34 +61,7 @@
     }
   });
 </script>
-<script>
-  // Dark Mode Persistente
-  const toggleButton = document.getElementById("toggle-mode");
-
-  function setDarkMode(active) {
-    if (active) {
-      document.body.classList.add("dark-mode");
-      localStorage.setItem("darkMode", "on");
-    } else {
-      document.body.classList.remove("dark-mode");
-      localStorage.setItem("darkMode", "off");
-    }
-  }
-
-  // Detecta click no botão e alterna modo
-  if (toggleButton) {
-    toggleButton.addEventListener("click", () => {
-      const isDark = !document.body.classList.contains("dark-mode");
-      setDarkMode(isDark);
-    });
-  }
-
-  // Ao carregar, lê o localStorage e aplica o modo escolhido
-  window.addEventListener("DOMContentLoaded", () => {
-    const savedMode = localStorage.getItem("darkMode");
-    setDarkMode(savedMode === "on");
-  });
-</script>
+<script src="darkmode.js"></script>
 
 </body>
 

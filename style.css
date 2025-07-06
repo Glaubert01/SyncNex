@@ -19,7 +19,7 @@ body {
 }
 
 .logo-csn{
-  content: url("../assets/logo-csn.png");
+  content: url("/assets/logo-csn.png");
   cursor: pointer;
   display: block;
   width: 100px;
@@ -585,7 +585,7 @@ body.dark-mode .footer-nav a:hover {
   color: #ffe144;
 }
 body.dark-mode .logo-csn {
-  content: url("../assets/logo-csn-darkmode.webp");
+  content: url("/assets/logo-csn-darkmode.webp");
 }
 /* Kanban */
 .kanban-board {

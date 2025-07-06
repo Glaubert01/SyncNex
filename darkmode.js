@@ -1,13 +1,27 @@
 // Dark Mode Persistente para qualquer página que tenha o botão #toggle-mode
+// Troca o src da logo dinamicamente
 
 function setDarkMode(active) {
   if (active) {
     document.body.classList.add("dark-mode");
     localStorage.setItem("darkMode", "on");
+    switchLogoDark(true);
   } else {
     document.body.classList.remove("dark-mode");
     localStorage.setItem("darkMode", "off");
+    switchLogoDark(false);
   }
+}
+
+// Troca o src da logo para dark ou light
+function switchLogoDark(isDark) {
+  // Seleciona todas as imagens da logo
+  const logos = document.querySelectorAll("img.logo-csn");
+  logos.forEach(img => {
+    img.src = isDark
+      ? "./assets/logo-csn-darkmode.webp"
+      : "./assets/logo-csn.png";
+  });
 }
 
 function setupDarkMode() {
@@ -31,3 +45,4 @@ if (document.readyState === "loading") {
 } else {
   setupDarkMode();
 }
+

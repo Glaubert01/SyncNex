@@ -6,6 +6,27 @@
   <title>SyncNex - CSN</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="assets/syncnex-favicon.png">
+    <style>
+    /* --- Ajuste para scroll horizontal suave e sem seleção de texto no mobile --- */
+    .kanban-board, .table-container {
+      -webkit-overflow-scrolling: touch;
+      overflow-x: auto;
+      touch-action: pan-x;
+      user-select: none;
+    }
+    .kanban-board, .kanban-column, .kanban-card, th, td {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    @media (max-width: 900px) {
+      .kanban-board, .table-container,
+      .kanban-column, .kanban-card, th, td {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -ms-user-select: none !important;
+      }
+    }
+  </style>
   <style>
     .kanban-info {
       font-size: 12px;
@@ -446,6 +467,28 @@
       saveKanbanToLocalStorage();
     });
   </script>
+
+    <style>
+    /* --- Ajuste para scroll horizontal suave e sem seleção de texto no mobile --- */
+    .kanban-board, .table-container {
+      -webkit-overflow-scrolling: touch;
+      overflow-x: auto;
+      touch-action: pan-x;
+      user-select: none;
+    }
+    .kanban-board, .kanban-column, .kanban-card, th, td {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    @media (max-width: 900px) {
+      .kanban-board, .table-container,
+      .kanban-column, .kanban-card, th, td {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -ms-user-select: none !important;
+      }
+    }
+  </style>
 
   <script src="darkmode.js"></script>
 </body>

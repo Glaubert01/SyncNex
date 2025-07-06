@@ -827,3 +827,22 @@ body.dark-mode .kanban-trash.over {
 .kanban-card.droppable.drag-over-bottom {
   border-bottom: 2.5px solid #0076be;
 }
+
+/* Faz o usuário conseguir arrastar o conteúdo horizontalmente no mobile (touch) */
+.table-container, .kanban-board {
+  -webkit-overflow-scrolling: touch; /* iOS rolagem suave */
+  overflow-x: auto;
+  touch-action: pan-x;               /* Permite arrastar para os lados */
+  user-select: none;                 /* Ninguém consegue selecionar texto por engano */
+}
+
+@media (max-width: 900px) {
+  .table-container, .kanban-board {
+    user-select: none !important;
+  }
+  th, td, .kanban-card, .kanban-column {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -ms-user-select: none !important;
+  }
+}

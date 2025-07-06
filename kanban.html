@@ -32,72 +32,51 @@
 
     <!-- Novo Kanban moderno -->
     <main class="main-content">
-      <h2 class="titulo">Kanban - Atividades</h2>
-      <div class="kanban-board">
-        <!-- Coluna: A Fazer -->
-        <section class="kanban-column to-do">
-          <header>A FAZER</header>
-          <div class="kanban-card">
-            <h4>3D: Criação de Peças</h4>
-            <ul>
-              <li>Desenho</li>
-              <li>Protótipo</li>
-              <li>Acabamento</li>
-            </ul>
-          </div>
-          <div class="kanban-card">
-            <h4>TI: Criação de Landing Page</h4>
-            <ul>
-              <li>Layout</li>
-              <li>Publicação</li>
-            </ul>
-          </div>
-        </section>
-        <!-- Coluna: Fazendo -->
-        <section class="kanban-column doing">
-          <header>FAZENDO</header>
-          <div class="kanban-card">
-            <h4>Social Media: MKT Influência</h4>
-            <ul>
-              <li>Briefing</li>
-              <li>Postagens</li>
-            </ul>
-          </div>
-        </section>
-        <!-- Coluna: Em Análise -->
-        <section class="kanban-column analyzing">
-          <header>EM ANÁLISE</header>
-          <div class="kanban-card">
-            <h4>TI: Desenvolvimento de Site</h4>
-            <ul>
-              <li>Design UX</li>
-              <li>Testes</li>
-            </ul>
-          </div>
-        </section>
-        <!-- Coluna: Pausado -->
-        <section class="kanban-column paused">
-          <header>PAUSADO</header>
-          <div class="kanban-card">
-            <h4>MKT: Trabalho</h4>
-            <ul>
-              <li>Briefing</li>
-            </ul>
-          </div>
-        </section>
-        <!-- Coluna: Concluído -->
-        <section class="kanban-column done">
-          <header>CONCLUÍDO</header>
-          <div class="kanban-card">
-            <h4>Compras: Orçamento</h4>
-            <ul>
-              <li>Coleta</li>
-              <li>Pedido</li>
-            </ul>
-          </div>
-        </section>
-      </div>
-    </main>
+  <h2 class="titulo">Kanban - Atividades</h2>
+  <div class="kanban-board" id="kanbanBoard">
+    <!-- Colunas Kanban -->
+    <section class="kanban-column to-do" data-status="todo">
+      <header>A FAZER</header>
+      <div class="kanban-cards" id="todo"></div>
+      <form class="add-card-form" onsubmit="addCard(event, 'todo')">
+        <input type="text" placeholder="Novo item..." required />
+        <button type="submit">+</button>
+      </form>
+    </section>
+    <section class="kanban-column doing" data-status="doing">
+      <header>FAZENDO</header>
+      <div class="kanban-cards" id="doing"></div>
+      <form class="add-card-form" onsubmit="addCard(event, 'doing')">
+        <input type="text" placeholder="Novo item..." required />
+        <button type="submit">+</button>
+      </form>
+    </section>
+    <section class="kanban-column analyzing" data-status="analyzing">
+      <header>EM ANÁLISE</header>
+      <div class="kanban-cards" id="analyzing"></div>
+      <form class="add-card-form" onsubmit="addCard(event, 'analyzing')">
+        <input type="text" placeholder="Novo item..." required />
+        <button type="submit">+</button>
+      </form>
+    </section>
+    <section class="kanban-column paused" data-status="paused">
+      <header>PAUSADO</header>
+      <div class="kanban-cards" id="paused"></div>
+      <form class="add-card-form" onsubmit="addCard(event, 'paused')">
+        <input type="text" placeholder="Novo item..." required />
+        <button type="submit">+</button>
+      </form>
+    </section>
+    <section class="kanban-column done" data-status="done">
+      <header>CONCLUÍDO</header>
+      <div class="kanban-cards" id="done"></div>
+      <form class="add-card-form" onsubmit="addCard(event, 'done')">
+        <input type="text" placeholder="Novo item..." required />
+        <button type="submit">+</button>
+      </form>
+    </section>
+  </div>
+</main>
     <!-- FIM main-content -->
   </div>
 
@@ -123,6 +102,74 @@
   </script>
 
   <script src="/Organograma--main/darkmode.js"></script>
+
+  <script>
+// Dados iniciais (pode mudar para seu contexto)
+const initialKanban = {
+  todo: ['3D: Criação de Peças', 'TI: Criação de Landing Page'],
+  doing: ['Social Media: MKT Influência'],
+  analyzing: ['TI: Desenvolvimento de Site'],
+  paused: ['MKT: Trabalho'],
+  done: ['Compras: Orçamento']
+};
+
+// Função para criar o card Kanban (drag&drop)
+function createCard(text) {
+  const card = document.createElement('div');
+  card.className = 'kanban-card';
+  card.draggable = true;
+  card.textContent = text;
+  card.addEventListener('dragstart', handleDragStart);
+  card.addEventListener('dragend', handleDragEnd);
+  return card;
+}
+
+// Inicializa o quadro com os cards iniciais
+function initKanban() {
+  for (const status in initialKanban) {
+    const container = document.getElementById(status);
+    container.innerHTML = '';
+    initialKanban[status].forEach(text => {
+      container.appendChild(createCard(text));
+    });
+  }
+}
+initKanban();
+
+// Adicionar novo card
+function addCard(event, status) {
+  event.preventDefault();
+  const input = event.target.querySelector('input');
+  const text = input.value.trim();
+  if (!text) return;
+  const card = createCard(text);
+  document.getElementById(status).appendChild(card);
+  input.value = '';
+}
+
+// Drag and drop handlers
+let draggedCard = null;
+
+function handleDragStart(e) {
+  draggedCard = this;
+  this.classList.add('dragging');
+}
+
+function handleDragEnd(e) {
+  this.classList.remove('dragging');
+  draggedCard = null;
+}
+
+document.querySelectorAll('.kanban-cards').forEach(column => {
+  column.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    if (draggedCard && !this.contains(draggedCard)) {
+      this.appendChild(draggedCard);
+    }
+  });
+});
+</script>
+
 </body>
 
 <footer class="footer">

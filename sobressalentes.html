@@ -8,10 +8,7 @@
   <link rel="icon" type="image/png" href="assets/syncnex-favicon.png">
 </head>
 <body>
-  <button id="toggle-mode" class="darkmode-btn" title="Alternar modo escuro">
-  🌓
-</button>
-
+  <button id="toggle-mode" class="darkmode-btn" title="Alternar modo escuro">🌓</button>
   <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu">&#9776;</button>
   <div class="container">
     <aside class="sidebar" id="sidebar">
@@ -28,48 +25,289 @@
         <li><a href="kanban.html">Kanban</a></li>
         <li><a href="mttr.html">MTTR</a></li>
         <li><a href="mtbf.html">MTBF</a></li>
-        <li class="menu__item"><a href="organograma.html">Organograma</a></li>                           
+        <li class="menu__item"><a href="organograma.html">Organograma</a></li>
         <li><a href="projetos.html">Projetos</a></li>
         <li><a href="sobressalentes.html">Sobressalentes</a></li>
       </ul>
     </aside>
-
     <main class="main-content">
       <h2 class="titulo">Gestão de Sobressalentes - GIL</h2>
-      <div class="table-container">
-        <table id="organograma"></table>
+      <!-- Cards de Status dinâmicos -->
+      <div id="statusCards" class="sobressalentes-status-cards"></div>
+      <!-- Actions -->
+      <div class="ss-actions">
+        <button id="addOrdem" class="ss-btn ss-btn-green">+ Ordem</button>
+        <button id="editOrdem" class="ss-btn ss-btn-blue">Atualizar</button>
+        <button id="filterOrdem" class="ss-btn ss-btn-yellow"><span>&#128269;</span> Filtrar</button>
+        <div style="flex:1"></div>
+        <button class="ss-btn ss-btn-gear">&#9881;</button>
       </div>
-      <div class="em-construcao">
-        <span class="construcao-icone" aria-label="Em construção">🚧</span>
-        <span class="construcao-txt">Página em construção</span>
+      <!-- Tabela -->
+      <div class="ss-table-container">
+        <table class="ss-table" id="ordemTable">
+          <thead>
+            <tr>
+              <th><input type="checkbox" /></th>
+              <th>Ordem #</th>
+              <th>Data</th>
+              <th>Status</th>
+              <th>Criado por</th>
+              <th>Ativo</th>
+              <th>Fornecedor</th>
+              <th>Valor</th>
+              <th>Orcamento</th>
+            </tr>
+            <tr class="filter-row" style="display:none;">
+              <th></th>
+              <th><input type="text" data-col="ordem" placeholder="Filtrar..."></th>
+              <th><input type="text" data-col="data" placeholder="Filtrar..."></th>
+              <th><input type="text" data-col="status" placeholder="Filtrar..."></th>
+              <th><input type="text" data-col="criado" placeholder="Filtrar..."></th>
+              <th><input type="text" data-col="ativo" placeholder="Filtrar..."></th>
+              <th><input type="text" data-col="fornecedor" placeholder="Filtrar..."></th>
+              <th><input type="text" data-col="valor" placeholder="Filtrar..."></th>
+              <th><input type="text" data-col="orcamento" placeholder="Filtrar..."></th>
+            </tr>
+          </thead>
+          <tbody id="ordemBody"></tbody>
+        </table>
       </div>
-    </main> <!-- FECHADO -->
-  </div> <!-- FECHADO -->
+    </main>
+  </div>
+  <!-- Modal para nova ordem -->
+  <div id="modalAdd" style="display:none; align-items:center; justify-content:center;">
+    <form id="formAdd">
+      <h3>Nova Ordem</h3>
+      <input name="ordem" required placeholder="Ordem #" />
+      <input name="data" type="date" required placeholder="Data" />
+      <input name="status" required placeholder="Status" list="statusList" />
+      <datalist id="statusList"></datalist>
+      <input name="criado" required placeholder="Criado por" />
+      <input name="ativo" required placeholder="Ativo" />
+      <input name="fornecedor" required placeholder="Fornecedor" />
+      <input name="valor" required placeholder="Valor" />
+      <input name="orcamento" placeholder="Orcamento" />
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <button type="submit" class="ss-btn ss-btn-green">Salvar</button>
+        <button type="button" class="ss-btn" onclick="document.getElementById('modalAdd').style.display='none'">Cancelar</button>
+      </div>
+    </form>
+  </div>
 
   <script>
-  const menuToggle = document.getElementById('menu-toggle');
-  const sidebar = document.getElementById('sidebar');
+    // ---- CONFIGURACAO DOS STATUS ----
+    const POSSIBLE_STATUS = [
+      "Criacao de RC",
+      "Criacao de PO",
+      "Embarque para o fornecedor",
+      "Reparo no fornecedor",
+      "Embarque para CSN",
+      "No estoque CSN",
+      "Na area"
+    ];
+    const cardColors = [
+      "#F59E1B", "#1BC47D", "#467FD0", "#CA3232", "#F7CF47", "#3B548A", "#A877C3"
+    ];
 
-  menuToggle.addEventListener('click', function () {
-    sidebar.classList.toggle('active');
-  });
+    // Sidebar
+    const menuToggle = document.getElementById('menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+    menuToggle.addEventListener('click', function () {
+      sidebar.classList.toggle('active');
+    });
+    document.addEventListener('click', function (e) {
+      if (
+        window.innerWidth <= 768 &&
+        sidebar.classList.contains('active') &&
+        !sidebar.contains(e.target) &&
+        !menuToggle.contains(e.target)
+      ) {
+        sidebar.classList.remove('active');
+      }
+    });
 
-  // Fecha sidebar ao clicar fora dela
-  document.addEventListener('click', function (e) {
-    if (
-      window.innerWidth <= 768 &&
-      sidebar.classList.contains('active') &&
-      !sidebar.contains(e.target) &&
-      !menuToggle.contains(e.target)
-    ) {
-      sidebar.classList.remove('active');
+    // Popula datalist de status do formulário
+    POSSIBLE_STATUS.forEach(s => {
+      const option = document.createElement("option");
+      option.value = s;
+      document.getElementById("statusList").appendChild(option);
+    });
+
+    function formatDateBR(dateStr) {
+      if (!dateStr) return '';
+      if (dateStr.includes('/')) return dateStr;
+      const [y, m, d] = dateStr.split('-');
+      return `${d}/${m}/${y}`;
     }
-  });
-</script>
-<script src="darkmode.js"></script>
 
+    function getData() {
+      return JSON.parse(localStorage.getItem("sobressalentes") || "[]");
+    }
+    function setData(data) {
+      localStorage.setItem("sobressalentes", JSON.stringify(data));
+      renderStatusCards();
+      renderTable(statusFilter ? {status: statusFilter} : {});
+    }
+
+    if (!localStorage.getItem("sobressalentes")) {
+      setData([
+        {ordem:"A020", data:"22/07/2025", status:"Criacao de PO", criado:"Vitor", ativo:"Radiador 1500", fornecedor:"A", valor:"10000", orcamento:"RG"},
+        {ordem:"A019", data:"10/07/2025", status:"Criacao de RC", criado:"Grasiela", ativo:"Compressor 1500", fornecedor:"B", valor:"20000", orcamento:"RG"},
+        {ordem:"A018", data:"04/03/2025", status:"Embarque para o fornecedor", criado:"Schnayder", ativo:"Motor 1900", fornecedor:"C", valor:"300000", orcamento:"RG"},
+        {ordem:"A017", data:"02/03/2025", status:"Reparo no fornecedor", criado:"Vitor", ativo:"Gerador 1900", fornecedor:"D", valor:"15000", orcamento:"MA"},
+        {ordem:"A016", data:"01/06/2025", status:"No estoque CSN", criado:"Vitor", ativo:"Compressor 1900", fornecedor:"E", valor:"5000", orcamento:"Plano de recuperacao"}
+      ]);
+    }
+
+    // ---- CARDS DE STATUS ----
+    let statusFilter = null;
+    function renderStatusCards() {
+      const data = getData();
+      const counts = {};
+      POSSIBLE_STATUS.forEach(s => counts[s] = 0);
+      data.forEach(item => {
+        const st = (item.status||"").trim();
+        if (counts.hasOwnProperty(st)) counts[st]++;
+      });
+      const html = POSSIBLE_STATUS.map((st, i) => `
+        <div
+          class="ss-card"
+          style="background:${cardColors[i]}; color:#fff; cursor:pointer; border: ${statusFilter === st ? '3px solid #fff':'none'}; box-shadow: 0 2px 8px #0002; min-width:170px;"
+          onclick="filterByStatus('${st}')"
+        >
+          <span style="font-size:2rem;font-weight:700;">${counts[st]}</span>
+          <small style="display:block;font-size:1.02rem;margin-top:2px;">${st}</small>
+        </div>
+      `).join("");
+      document.getElementById("statusCards").innerHTML = html;
+    }
+
+    window.filterByStatus = function(status) {
+      statusFilter = (statusFilter === status) ? null : status;
+      renderStatusCards();
+      renderTable(statusFilter ? {status} : {});
+    };
+
+    // ---- TABELA ----
+    let editMode = false;
+    function renderTable(filter={}) {
+      const body = document.getElementById('ordemBody');
+      let data = getData();
+      Object.keys(filter).forEach(k=>{
+        if(filter[k]) {
+          data = data.filter(row=> (row[k]||"").toLowerCase().includes(filter[k].toLowerCase()));
+        }
+      });
+      body.innerHTML = data.map((row, idx) => `
+        <tr>
+          <td><input type="checkbox" data-idx="${idx}"></td>
+          <td>${row.ordem}</td>
+          <td>${formatDateBR(row.data)}</td>
+          <td>${
+            editMode
+            ? `<select data-field="status">${POSSIBLE_STATUS.map(st => `<option value="${st}"${row.status===st?' selected':''}>${st}</option>`).join('')}</select>`
+            : row.status
+          }</td>
+          <td>${editMode ? `<input type="text" value="${row.criado}" data-field="criado"/>` : row.criado}</td>
+          <td>${editMode ? `<input type="text" value="${row.ativo}" data-field="ativo"/>` : row.ativo}</td>
+          <td>${editMode ? `<input type="text" value="${row.fornecedor||''}" data-field="fornecedor"/>` : (row.fornecedor||'')}</td>
+          <td>${editMode ? `<input type="text" value="${row.valor||''}" data-field="valor"/>` : (row.valor||'')}</td>
+          <td>${editMode ? `<input type="text" value="${row.orcamento||''}" data-field="orcamento"/>` : (row.orcamento||'')}</td>
+        </tr>
+      `).join('');
+      // Se editMode, vincula eventos para atualizar localStorage ao sair do input/select
+      if(editMode){
+        [...body.rows].forEach((tr, idx) => {
+          // Status
+          const statusSel = tr.querySelector('select[data-field="status"]');
+          if(statusSel){
+            statusSel.onchange = function(){
+              let data = getData();
+              data[idx].status = this.value;
+              setData(data);
+            }
+          }
+          // Os outros campos
+          tr.querySelectorAll('input').forEach(inp=>{
+            inp.onblur = function(){
+              let data = getData();
+              let field = this.getAttribute('data-field');
+              let value = this.value;
+              if(field === "data") value = formatDateBR(value);
+              data[idx][field] = value;
+              setData(data);
+            };
+            inp.onkeydown = function(e){
+              if(e.key === "Enter") this.blur();
+            }
+          });
+        });
+      }
+    }
+
+    // ---- ADICIONAR ORDEM ----
+    document.getElementById('addOrdem').onclick = () => {
+      document.getElementById('modalAdd').style.display='flex';
+      document.getElementById('formAdd').reset();
+    };
+    document.getElementById('formAdd').onsubmit = function(e){
+      e.preventDefault();
+      const form = e.target;
+      const data = getData();
+      data.unshift({
+        ordem: form.ordem.value,
+        data: formatDateBR(form.data.value),
+        status: form.status.value,
+        criado: form.criado.value,
+        ativo: form.ativo.value,
+        fornecedor: form.fornecedor.value,
+        valor: form.valor.value,
+        orcamento: form.orcamento.value
+      });
+      setData(data);
+      document.getElementById('modalAdd').style.display='none';
+    };
+
+    // ---- EDIÇÃO INLINE (com select para status) ----
+    document.getElementById('editOrdem').onclick = function(){
+      editMode = !editMode;
+      this.textContent = editMode ? "Salvar Atualizações" : "Atualizar";
+      if(!editMode) {
+        // Força re-render pra sair dos inputs/selects
+        setData(getData());
+      } else {
+        renderTable(statusFilter ? {status: statusFilter} : {});
+      }
+    };
+
+    // ---- FILTROS ----
+    let filtroAtivo = false;
+    document.getElementById('filterOrdem').onclick = function(){
+      filtroAtivo = !filtroAtivo;
+      document.querySelector('.filter-row').style.display = filtroAtivo ? '' : 'none';
+      if(filtroAtivo){
+        document.querySelectorAll('.filter-row input').forEach(input => {
+          input.oninput = function(){
+            const filters = {};
+            document.querySelectorAll('.filter-row input').forEach(i => {
+              let key = i.getAttribute('data-col');
+              filters[key] = i.value;
+            });
+            renderTable(filters);
+          }
+        });
+      } else {
+        renderTable(statusFilter ? {status: statusFilter} : {});
+      }
+    };
+
+    // ---- INICIALIZACAO ----
+    renderStatusCards();
+    renderTable();
+
+  </script>
+  <script src="darkmode.js"></script>
 </body>
-
 <footer class="footer">
   <div class="footer-content" style="display: flex; justify-content: space-between; align-items: center;">
     <div class="footer-logo-group">
@@ -89,8 +327,4 @@
     </div>
   </div>
 </footer>
-
-
 </html>
-
-

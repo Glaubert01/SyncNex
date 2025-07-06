@@ -1330,3 +1330,222 @@ body.dark-mode .footer-content > * {
     margin: 2px 0;
   }
 }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  /* Para garantir fundo da página até o fim */
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Supondo que seu <footer> tenha a classe .footer */
+.footer {
+  margin-top: auto; /* Isso “empurra” o footer para o final */
+}
+
+
+/* ---- Cards de status ---- */
+.sobressalentes-status-cards {
+  display: flex;
+  gap: 12px;
+  margin: 18px 0 12px 0;
+  flex-wrap: wrap;
+}
+.ss-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 140px;
+  padding: 10px 18px 7px 18px;
+  border-radius: 13px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #222;
+  background: #eee;
+  box-shadow: 0 2px 6px #0001;
+  border: 2px solid #fff;
+  transition: box-shadow .15s;
+  align-items: center;
+}
+.ss-incomplete { background: #f9b650; color: #fff; }
+.ss-mine      { background: #39b64a; color: #fff; }
+.ss-urgent    { background: #eb4a3a; color: #fff; }
+.ss-overdue   { background: #f9b650; color: #fff; }
+.ss-statuses  { background: #f9b650; color: #fff; }
+.ss-receivables { background: #23272e; color: #fff; }
+.ss-card span { font-size: 1.2em; font-weight: bold; }
+.ss-card small { font-size: 0.93em; opacity: 0.82; font-weight: 400; }
+
+/* ---- Actions ---- */
+.ss-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.ss-btn {
+  background: #f3f5f9;
+  color: #222;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.13s, box-shadow 0.15s;
+  box-shadow: 0 1px 2px #0001;
+  display: flex; align-items: center; gap: 6px;
+}
+.ss-btn-green { background: #39b64a; color: #fff; }
+.ss-btn-filter { background: #f3f5f9; color: #39b64a; border: 1.5px solid #d4ecd8; }
+.ss-btn-gear { background: #f3f5f9; font-size: 22px; padding: 4px 14px; }
+
+/* ---- Tabela ---- */
+.ss-table-container {
+  width: 100%;
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 11px;
+  box-shadow: 0 2px 12px #0002;
+  margin: 0 auto 18px auto;
+}
+.ss-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 1rem;
+  min-width: 970px;
+  background: #fff;
+}
+.ss-table th, .ss-table td {
+  border-bottom: 1px solid #ececec;
+  padding: 10px 10px;
+  text-align: center;
+}
+.ss-table th {
+  background: #f7f9fb;
+  font-weight: 700;
+  color: #222;
+}
+.ss-table tbody tr:hover {
+  background: #f5f8fa;
+}
+.ss-table td {
+  font-weight: 500;
+}
+.ss-table td a {
+  color: #1882e4;
+  text-decoration: none;
+  font-weight: 600;
+}
+.ss-table input[type="checkbox"] {
+  width: 18px; height: 18px;
+}
+
+/* ---- Status tags ---- */
+.ss-tag {
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 0.93em;
+  font-weight: 600;
+  display: inline-block;
+}
+.ss-tag-draft { background: #ffe7b2; color: #ca8b00; border: 1px solid #ffd965; }
+.ss-tag-accepted { background: #f1f1f1; color: #292929; border: 1px solid #dadada; }
+.ss-tag-diagnostic { background: #bdf9c7; color: #219653; border: 1px solid #8dd4a1;}
+.ss-tag-progress { background: #bdf9e7; color: #1bc9a8; border: 1px solid #7be1c8;}
+.ss-tag-done { background: #d2e0f7; color: #225ba5; border: 1px solid #b1cdf0;}
+/* Datas */
+.ss-date { font-size: .98em; display: inline-block; min-width: 70px;}
+.ss-overdue-date { color: #eb4a3a; font-weight: 600; }
+
+/* Responsividade */
+@media (max-width: 900px) {
+  .ss-table { font-size: 0.93rem; min-width: 700px; }
+  .sobressalentes-status-cards { gap: 7px; }
+  .ss-card { min-width: 98px; font-size: 1rem;}
+  .ss-actions { gap: 5px; }
+}
+
+.sobressalentes-status-cards {
+  display: flex;
+  gap: 18px;
+  margin: 16px 0 22px 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.ss-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 135px;
+  padding: 16px 30px 12px 30px;
+  border-radius: 13px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 2px 14px #0004;
+  background: #2a2c34;
+  transition: box-shadow .18s, background .16s;
+}
+
+.ss-card .ss-icon {
+  font-size: 1.8em;
+  margin-bottom: 2px;
+  opacity: 0.90;
+  display: block;
+}
+
+.ss-card small {
+  font-size: 1.03rem;
+  font-weight: 400;
+  color: #fff;
+  opacity: .80;
+  margin-top: 1px;
+  text-shadow: 0 1px 2px #0005;
+}
+
+/* Cores originais, vivas! */
+.ss-incomplete  { background: #ffb34d; color: #fff; }
+.ss-mine        { background: #2ec655; color: #fff; }
+.ss-urgent      { background: #d2302f; color: #fff; }
+.ss-overdue     { background: #ffba34; color: #fff; }
+.ss-statuses    { background: #ffcc44; color: #fff; }
+.ss-receivables { background: #1d3250; color: #fff; }
+
+.ss-card {
+  border: 2px solid rgba(80,120,255,0.07);
+}
+
+/* Modo escuro */
+body.dark-mode .ss-card {
+  color: #fff;
+  box-shadow: 0 2px 16px #0007;
+  border: 2px solid rgba(80,120,255,0.13);
+}
+body.dark-mode .ss-incomplete  { background: #e99118; }
+body.dark-mode .ss-mine        { background: #159e42; }
+body.dark-mode .ss-urgent      { background: #bb2522; }
+body.dark-mode .ss-overdue     { background: #b87f19; }
+body.dark-mode .ss-statuses    { background: #ad8e0f; }
+body.dark-mode .ss-receivables { background: #233a6d; }
+
+
+/* Hover linha da tabela (modo escuro e claro) */
+.ss-table tbody tr:hover {
+  background: rgba(70, 125, 200, 0.10) !important; /* azul translúcido suave */
+  transition: background 0.2s;
+}
+
+/* Se quiser escurecer mais no darkmode, use: */
+body.dark-mode .ss-table tbody tr:hover {
+  background: rgba(70, 125, 200, 0.18) !important;
+}

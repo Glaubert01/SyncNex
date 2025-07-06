@@ -8,9 +8,7 @@
   <link rel="icon" type="image/png" href="/assets/syncnex-favicon.png">
 </head>
 <body>
-    <button id="toggle-mode" class="darkmode-btn" title="Alternar modo escuro">
-    🌓
-    </button>
+  <button id="toggle-mode" class="darkmode-btn" title="Alternar modo escuro">🌓</button>
   <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu">&#9776;</button>
   <div class="container">
     <aside class="sidebar" id="sidebar">
@@ -165,11 +163,18 @@
       alert("Salvo com sucesso!");
     }
 
+    // DARK MODE PERSISTENTE
     document.addEventListener("DOMContentLoaded", () => {
+      // Ativa darkmode salvo no storage ao carregar a página
+      if (localStorage.getItem("dark-mode") === "1") {
+        document.body.classList.add("dark-mode");
+      }
       const toggleButton = document.getElementById("toggle-mode");
       if (toggleButton) {
         toggleButton.addEventListener("click", () => {
           document.body.classList.toggle("dark-mode");
+          // Salva o estado ao alternar
+          localStorage.setItem("dark-mode", document.body.classList.contains("dark-mode") ? "1" : "");
         });
       }
       renderTable();
@@ -177,27 +182,24 @@
   </script>
 
   <script>
-  const menuToggle = document.getElementById('menu-toggle');
-  const sidebar = document.getElementById('sidebar');
+    const menuToggle = document.getElementById('menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+    menuToggle.addEventListener('click', function () {
+      sidebar.classList.toggle('active');
+    });
+    // Fecha sidebar ao clicar fora dela
+    document.addEventListener('click', function (e) {
+      if (
+        window.innerWidth <= 768 &&
+        sidebar.classList.contains('active') &&
+        !sidebar.contains(e.target) &&
+        !menuToggle.contains(e.target)
+      ) {
+        sidebar.classList.remove('active');
+      }
+    });
+  </script>
 
-  menuToggle.addEventListener('click', function () {
-    sidebar.classList.toggle('active');
-  });
-
-  // Fecha sidebar ao clicar fora dela
-  document.addEventListener('click', function (e) {
-    if (
-      window.innerWidth <= 768 &&
-      sidebar.classList.contains('active') &&
-      !sidebar.contains(e.target) &&
-      !menuToggle.contains(e.target)
-    ) {
-      sidebar.classList.remove('active');
-    }
-  });
-</script>
-
-<script src="darkmode.js"></script>
 </body>
 
 <footer class="footer">
@@ -218,4 +220,3 @@
   </div>
 </footer>
 </html>
-

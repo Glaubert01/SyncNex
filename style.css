@@ -710,3 +710,215 @@ body.dark-mode .add-card-form button:hover {
   background: #005a9c;
   color: #ffe144;
 }
+
+.kanban-info {
+  font-size: 12px;
+  color: #656d7a;
+  background: #f6f7f9;
+  border-radius: 5px;
+  margin-top: 4px;
+  padding: 4px 7px;
+}
+
+body.dark-mode .kanban-info {
+  background: #222831;
+  color: #ffe144;
+}
+
+.edit-card-input {
+  font-size: 15px;
+  width: 96%;
+  border-radius: 4px;
+  border: 1px solid #aaa;
+  margin-bottom: 3px;
+  margin-top: 2px;
+}
+
+.kanban-trash {
+  position: fixed;
+  right: 34px;
+  bottom: 34px;
+  width: 68px;
+  height: 68px;
+  background: #fff;
+  color: #003b71;
+  border-radius: 50%;
+  border: 2px solid #003b71;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  box-shadow: 0 4px 22px rgba(0,0,0,0.18);
+  cursor: pointer;
+  z-index: 10000;
+  opacity: 0.93;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+  pointer-events: all;
+}
+
+.kanban-trash.over {
+  background: #ff5252;
+  color: #fff;
+  border: 2px solid #ff5252;
+  opacity: 1;
+  animation: shake-trash 0.1s alternate 2;
+}
+
+@keyframes shake-trash {
+  0% { transform: scale(1) rotate(-7deg);}
+  100% { transform: scale(1.08) rotate(7deg);}
+}
+
+.kanban-trash.show {
+  display: flex !important;
+}
+
+@media (max-width: 600px) {
+  .kanban-trash {
+    right: 12px;
+    bottom: 12px;
+    width: 48px;
+    height: 48px;
+    font-size: 1.4rem;
+  }
+}
+
+body.dark-mode .kanban-trash {
+  background: #23272f;
+  color: #ffe144;
+  border-color: #ffe144;
+}
+body.dark-mode .kanban-trash.over {
+  background: #c0392b;
+  color: #fff;
+  border-color: #c0392b;
+}
+
+.page-title-card,
+h2.titulo {
+  display: flex;
+  align-items: center;        /* Agora alinha verticalmente ao centro! */
+  justify-content: center;    /* Centraliza horizontalmente o conteúdo */
+  gap: 16px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px 0 rgba(0,59,113,0.08);
+  padding: 18px 30px 16px 22px;
+  margin: 0 auto 28px auto;
+  width: fit-content;
+  min-width: 280px;
+  max-width: 96vw;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  transition: background 0.18s, box-shadow 0.18s;
+}
+
+.page-title-card img,
+h2.titulo img {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: #f6f8fa;
+  box-shadow: 0 2px 8px rgba(0,59,113,0.06);
+  margin-right: 10px;
+}
+
+.page-title-card .title-group,
+h2.titulo .title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;   /* Fica melhor para grupos, mas pode ser center se quiser tudo central */
+}
+
+.page-title-card .main-title,
+h2.titulo .main-title {
+  font-size: 1.34rem;
+  color: #003b71;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+}
+
+.page-title-card .subtitle,
+h2.titulo .subtitle {
+  font-size: 1.01rem;
+  color: #0076be;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Títulos simples (sem img e div): centraliza texto totalmente */
+h2.titulo:not(:has(img)) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: #003b71;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px 0 rgba(0,59,113,0.08);
+  padding: 18px 34px 14px 34px;
+  width: fit-content;
+  margin: 0 auto 28px auto;
+  min-width: 260px;
+  max-width: 96vw;
+  text-align: center;
+}
+
+/* Responsivo */
+@media (max-width: 700px) {
+  .page-title-card,
+  h2.titulo {
+    padding: 13px 8vw 11px 6vw;
+    gap: 9px;
+    min-width: 140px;
+    font-size: 1.01rem;
+  }
+  .page-title-card img,
+  h2.titulo img {
+    width: 36px;
+    height: 36px;
+    margin-right: 5px;
+  }
+}
+
+@media (max-width: 400px) {
+  .page-title-card,
+  h2.titulo {
+    padding: 7px 2vw 7px 2vw;
+    font-size: 0.91rem;
+    min-width: 90px;
+  }
+  .page-title-card img,
+  h2.titulo img {
+    width: 27px;
+    height: 27px;
+  }
+}
+
+/* Modo escuro */
+body.dark-mode .page-title-card,
+body.dark-mode h2.titulo {
+  background: #21262b;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.19);
+}
+
+body.dark-mode h2.titulo,
+body.dark-mode .page-title-card .main-title,
+body.dark-mode h2.titulo .main-title {
+  color: #ffe144;
+}
+
+body.dark-mode .page-title-card .subtitle,
+body.dark-mode h2.titulo .subtitle {
+  color: #63a4ff;
+}
+
+.kanban-card.droppable.drag-over-top {
+  border-top: 2.5px solid #0076be;
+}
+.kanban-card.droppable.drag-over-bottom {
+  border-bottom: 2.5px solid #0076be;
+}

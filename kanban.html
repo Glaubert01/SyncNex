@@ -27,6 +27,12 @@
       margin-bottom: 3px;
       margin-top: 2px;
     }
+    .kanban-card.droppable.drag-over-top {
+      border-top: 2.5px solid #0076be;
+    }
+    .kanban-card.droppable.drag-over-bottom {
+      border-bottom: 2.5px solid #0076be;
+    }
   </style>
 </head>
 <body>
@@ -102,7 +108,13 @@
     <!-- FIM main-content -->
   </div>
 
+  <!-- Lixeira flutuante para drag & drop delete -->
+  <div id="kanban-trash" class="kanban-trash" style="display:none;" title="Arraste um item aqui para excluir">
+    🗑️
+  </div>
+
   <script>
+    // Sidebar menu responsivo
     const menuToggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');
     menuToggle.addEventListener('click', function () {
@@ -118,10 +130,28 @@
         sidebar.classList.remove('active');
       }
     });
-  </script>
 
-  <script src="darkmode.js"></script>
-  <script>
+    // --- PERSISTÊNCIA LOCAL ---
+    function saveKanbanToLocalStorage() {
+      const board = {};
+      ['todo','doing','analyzing','paused','done'].forEach(status => {
+        board[status] = [];
+        document.querySelectorAll(`#${status} .kanban-card`).forEach(card => {
+          board[status].push({
+            text: card.dataset.name,
+            prazo: card.dataset.deadline,
+            next: card.dataset.next,
+            responsavel: card.dataset.responsavel
+          });
+        });
+      });
+      localStorage.setItem('kanban-board', JSON.stringify(board));
+    }
+    function loadKanbanFromLocalStorage() {
+      const data = localStorage.getItem('kanban-board');
+      return data ? JSON.parse(data) : initialKanban;
+    }
+
     // Mapeamento da próxima fase
     const nextPhaseMap = {
       todo: "Fazendo",
@@ -131,7 +161,7 @@
       done: "-"
     };
 
-    // Dados iniciais
+    // Dados iniciais (só usado se não houver localStorage ainda)
     const initialKanban = {
       todo: [
         { text: '3D: Criação de Peças', prazo: '15/07/2025', next: 'Fazendo', responsavel: 'Carlos' },
@@ -151,7 +181,7 @@
       ]
     };
 
-    // Criação dos cards Kanban (drag&drop e edição inline)
+    // Kanban render
     function createCard(text, prazo = '', nextPhase = '', responsavel = '') {
       const card = document.createElement('div');
       card.className = 'kanban-card';
@@ -198,6 +228,7 @@
           input.replaceWith(span);
           card.dataset.next = input.value;
           span.addEventListener('click', arguments.callee);
+          saveKanbanToLocalStorage();
         });
         input.addEventListener('keydown', function(ev) {
           if (ev.key === 'Enter') input.blur();
@@ -211,7 +242,6 @@
         input.value = this.textContent;
         input.className = 'edit-card-input';
         input.type = 'date';
-        // Se já é uma data válida, converter para o formato YYYY-MM-DD
         if (/^\d{2}\/\d{2}\/\d{4}$/.test(input.value)) {
           const [d, m, y] = input.value.split('/');
           input.value = `${y}-${m}-${d}`;
@@ -224,7 +254,6 @@
           span.className = 'deadline';
           span.setAttribute('tabindex', '0');
           let val = input.value;
-          // Converte de YYYY-MM-DD para DD/MM/YYYY
           if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
             const [y, m, d] = val.split('-');
             val = `${d}/${m}/${y}`;
@@ -233,6 +262,7 @@
           card.dataset.deadline = val;
           input.replaceWith(span);
           span.addEventListener('click', arguments.callee);
+          saveKanbanToLocalStorage();
         });
         input.addEventListener('keydown', function(ev) {
           if (ev.key === 'Enter') input.blur();
@@ -256,6 +286,7 @@
           input.replaceWith(span);
           card.dataset.responsavel = input.value;
           span.addEventListener('click', arguments.callee);
+          saveKanbanToLocalStorage();
         });
         input.addEventListener('keydown', function(ev) {
           if (ev.key === 'Enter') input.blur();
@@ -276,6 +307,7 @@
             card.dataset.name = input.value;
             card.childNodes[0].nodeValue = input.value;
             card.removeChild(input);
+            saveKanbanToLocalStorage();
           });
           input.addEventListener('keydown', function (ev) {
             if (ev.key === 'Enter') input.blur();
@@ -283,23 +315,29 @@
         }
       });
 
+      // Drag and drop ordenado
       card.addEventListener('dragstart', handleDragStart);
       card.addEventListener('dragend', handleDragEnd);
+      card.addEventListener('dragover', handleCardDragOver);
+      card.addEventListener('dragleave', handleCardDragLeave);
+      card.addEventListener('drop', handleCardDrop);
 
       return card;
     }
 
-    // Inicializa o quadro com os cards iniciais
-    function initKanban() {
-      for (const status in initialKanban) {
+    function renderKanban(kanbanData) {
+      for (const status in kanbanData) {
         const container = document.getElementById(status);
         container.innerHTML = '';
-        initialKanban[status].forEach(obj => {
+        kanbanData[status].forEach(obj => {
           container.appendChild(createCard(obj.text, obj.prazo, obj.next, obj.responsavel));
         });
       }
     }
-    initKanban();
+
+    // Inicializa com dados do localStorage
+    let currentKanban = loadKanbanFromLocalStorage();
+    renderKanban(currentKanban);
 
     // Adicionar novo card
     function addCard(event, status) {
@@ -307,34 +345,109 @@
       const input = event.target.querySelector('input');
       const text = input.value.trim();
       if (!text) return;
-      // Prompt para prazo e responsável
       const prazo = prompt("Prazo para ir para a próxima fase (ex: 12/07/2025):", "");
       const responsavel = prompt("Responsável:", "");
       const nextPhase = nextPhaseMap[status] || "";
       const card = createCard(text, prazo, nextPhase, responsavel);
       document.getElementById(status).appendChild(card);
       input.value = '';
+      saveKanbanToLocalStorage();
     }
 
-    // Drag and drop handlers
-    let draggedCard = null;
+    // Drag and drop com ordenação!
+    let draggedCard = null, overCard = null;
+    const trash = document.getElementById('kanban-trash');
+
     function handleDragStart(e) {
       draggedCard = this;
       this.classList.add('dragging');
+      trash.style.display = 'flex';
+      setTimeout(() => trash.classList.add('show'), 10);
+      document.querySelectorAll('.kanban-card').forEach(card => {
+        if (card !== draggedCard) card.classList.add('droppable');
+      });
     }
     function handleDragEnd(e) {
       this.classList.remove('dragging');
+      trash.style.display = 'none';
+      trash.classList.remove('over', 'show');
       draggedCard = null;
+      overCard = null;
+      document.querySelectorAll('.kanban-card').forEach(card => {
+        card.classList.remove('droppable', 'drag-over-top', 'drag-over-bottom');
+      });
+      saveKanbanToLocalStorage();
     }
+    function handleCardDragOver(e) {
+      e.preventDefault();
+      if (!draggedCard || draggedCard === this) return;
+      const rect = this.getBoundingClientRect();
+      const offset = e.clientY - rect.top;
+      if (offset < rect.height / 2) {
+        this.classList.add('drag-over-top');
+        this.classList.remove('drag-over-bottom');
+      } else {
+        this.classList.add('drag-over-bottom');
+        this.classList.remove('drag-over-top');
+      }
+      overCard = this;
+    }
+    function handleCardDragLeave(e) {
+      this.classList.remove('drag-over-top', 'drag-over-bottom');
+      overCard = null;
+    }
+    function handleCardDrop(e) {
+      e.preventDefault();
+      if (!draggedCard || draggedCard === this) return;
+      const rect = this.getBoundingClientRect();
+      const offset = e.clientY - rect.top;
+      if (offset < rect.height / 2) {
+        this.parentNode.insertBefore(draggedCard, this);
+      } else {
+        this.parentNode.insertBefore(draggedCard, this.nextSibling);
+      }
+      this.classList.remove('drag-over-top', 'drag-over-bottom');
+      overCard = null;
+      saveKanbanToLocalStorage();
+    }
+
+    // Drop na coluna (fim)
     document.querySelectorAll('.kanban-cards').forEach(column => {
       column.addEventListener('dragover', function(e) {
         e.preventDefault();
-        if (draggedCard && !this.contains(draggedCard)) {
-          this.appendChild(draggedCard);
+        if (draggedCard && !overCard) {
+          if (!this.contains(draggedCard)) {
+            this.appendChild(draggedCard);
+            saveKanbanToLocalStorage();
+          }
         }
       });
     });
+
+    trash.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      this.classList.add('over');
+    });
+    trash.addEventListener('dragleave', function(e) {
+      this.classList.remove('over');
+    });
+    trash.addEventListener('drop', function(e) {
+      if (draggedCard) {
+        draggedCard.parentElement.removeChild(draggedCard);
+        draggedCard = null;
+        saveKanbanToLocalStorage();
+      }
+      this.classList.remove('over');
+      this.style.display = 'none';
+      this.classList.remove('show');
+    });
+
+    window.addEventListener("beforeunload", () => {
+      saveKanbanToLocalStorage();
+    });
   </script>
+
+  <script src="darkmode.js"></script>
 </body>
 
 <footer class="footer">

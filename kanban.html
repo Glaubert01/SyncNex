@@ -490,6 +490,122 @@
     }
   </style>
 
+  <script>
+(function enableKanbanTouchDrag() {
+  // Procura todos os cards
+  function getKanbanCards() {
+    return document.querySelectorAll('.kanban-card');
+  }
+  function getKanbanColumns() {
+    return document.querySelectorAll('.kanban-cards');
+  }
+
+  let touchDrag = {
+    card: null,
+    offsetY: 0,
+    startX: 0,
+    startY: 0,
+    ghost: null
+  };
+
+  // Aplica eventos touch para cada card
+  function setupCardTouch(card) {
+    // Evitar duplicidade
+    if (card.dataset.touchReady) return;
+    card.dataset.touchReady = "1";
+    
+    card.addEventListener('touchstart', function(e) {
+      if (e.touches.length !== 1) return;
+      e.preventDefault();
+      touchDrag.card = card;
+      touchDrag.startX = e.touches[0].clientX;
+      touchDrag.startY = e.touches[0].clientY;
+      touchDrag.offsetY = e.touches[0].clientY - card.getBoundingClientRect().top;
+
+      // Cria "ghost" visual do card
+      touchDrag.ghost = card.cloneNode(true);
+      touchDrag.ghost.style.position = "fixed";
+      touchDrag.ghost.style.pointerEvents = "none";
+      touchDrag.ghost.style.zIndex = "9999";
+      touchDrag.ghost.style.opacity = "0.75";
+      touchDrag.ghost.style.width = card.offsetWidth + "px";
+      touchDrag.ghost.style.left = card.getBoundingClientRect().left + "px";
+      touchDrag.ghost.style.top = (e.touches[0].clientY - touchDrag.offsetY) + "px";
+      document.body.appendChild(touchDrag.ghost);
+
+      card.style.opacity = "0.4";
+    });
+
+    card.addEventListener('touchmove', function(e) {
+      if (!touchDrag.card) return;
+      e.preventDefault();
+      // Move o ghost junto com o dedo
+      let touch = e.touches[0];
+      if (touchDrag.ghost) {
+        touchDrag.ghost.style.left = touch.clientX - (card.offsetWidth/2) + "px";
+        touchDrag.ghost.style.top = touch.clientY - touchDrag.offsetY + "px";
+      }
+
+      // Detecta se está sobre alguma coluna
+      getKanbanColumns().forEach(col => {
+        let rect = col.getBoundingClientRect();
+        if (
+          touch.clientX > rect.left && touch.clientX < rect.right &&
+          touch.clientY > rect.top && touch.clientY < rect.bottom
+        ) {
+          col.style.background = "#dde9f9";
+        } else {
+          col.style.background = "";
+        }
+      });
+    });
+
+    card.addEventListener('touchend', function(e) {
+      if (!touchDrag.card) return;
+      let touch = e.changedTouches[0];
+      let dropped = false;
+
+      getKanbanColumns().forEach(col => {
+        let rect = col.getBoundingClientRect();
+        if (
+          touch.clientX > rect.left && touch.clientX < rect.right &&
+          touch.clientY > rect.top && touch.clientY < rect.bottom
+        ) {
+          col.appendChild(touchDrag.card);
+          dropped = true;
+        }
+        col.style.background = "";
+      });
+
+      touchDrag.card.style.opacity = "";
+      if (touchDrag.ghost) {
+        document.body.removeChild(touchDrag.ghost);
+        touchDrag.ghost = null;
+      }
+      touchDrag.card = null;
+      if (dropped) {
+        // Salva no localStorage se já usa esse recurso
+        if (typeof saveKanbanToLocalStorage === "function") saveKanbanToLocalStorage();
+      }
+    });
+  }
+
+  // Reaplica sempre que renderiza cards
+  function observeCards() {
+    getKanbanCards().forEach(setupCardTouch);
+  }
+
+  // Inicializa e observa mutações de DOM para novos cards
+  observeCards();
+  // (Sempre que adicionar/remover cards via JS, chame observeCards())
+  if (typeof MutationObserver !== "undefined") {
+    const observer = new MutationObserver(observeCards);
+    observer.observe(document.getElementById('kanbanBoard'), { childList: true, subtree: true });
+  }
+})();
+</script>
+
+
   <script src="darkmode.js"></script>
 </body>
 

@@ -6,7 +6,7 @@
   <title>SyncNex - CSN</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="assets/syncnex-favicon.png">
-    <style>
+  <style>
     /* --- Ajuste para scroll horizontal suave e sem seleção de texto no mobile --- */
     .kanban-board, .table-container {
       -webkit-overflow-scrolling: touch;
@@ -26,6 +26,35 @@
         -ms-user-select: none !important;
       }
     }
+    /* === CORES PRAZO KANBAN === */
+    .kanban-card-green {
+      background: #dbfbe9 !important;
+      border-left: 5px solid #3dcc63 !important;
+    }
+    .kanban-card-yellow {
+      background: #fff9db !important;
+      border-left: 5px solid #ffcc00 !important;
+    }
+    .kanban-card-red {
+      background: #ffeded !important;
+      border-left: 5px solid #f44436 !important;
+    }
+    body.dark-mode .kanban-card-green {
+      background: #214e37 !important;
+      border-left: 5px solid #53d987 !important;
+      color: #baffc2 !important;
+    }
+    body.dark-mode .kanban-card-yellow {
+      background: #504a1b !important;
+      border-left: 5px solid #ffe144 !important;
+      color: #ffe144 !important;
+    }
+    body.dark-mode .kanban-card-red {
+      background: #402727 !important;
+      border-left: 5px solid #ff5252 !important;
+      color: #ff9f9f !important;
+    }
+    /* === FIM CORES PRAZO KANBAN === */
   </style>
   <style>
     .kanban-info {
@@ -125,6 +154,22 @@
           </form>
         </section>
       </div>
+      <!-- LEGENDA PRAZOS -->
+      <div class="kanban-legend" style="display:flex;gap:18px;margin:18px 0 0 0;align-items:center;justify-content:center;">
+        <span style="display:flex;align-items:center;gap:7px;">
+          <span style="display:inline-block;width:22px;height:18px;background:#dbfbe9;border-left:5px solid #3dcc63;border-radius:4px;margin-right:2px;"></span>
+          <span>Prazo &gt; 7 dias (verde)</span>
+        </span>
+        <span style="display:flex;align-items:center;gap:7px;">
+          <span style="display:inline-block;width:22px;height:18px;background:#fff9db;border-left:5px solid #ffcc00;border-radius:4px;margin-right:2px;"></span>
+          <span>Prazo ≤ 7 dias (amarelo)</span>
+        </span>
+        <span style="display:flex;align-items:center;gap:7px;">
+          <span style="display:inline-block;width:22px;height:18px;background:#ffeded;border-left:5px solid #f44436;border-radius:4px;margin-right:2px;"></span>
+          <span>Prazo vencido (vermelho)</span>
+        </span>
+      </div>
+      <!-- FIM LEGENDA -->
     </main>
     <!-- FIM main-content -->
   </div>
@@ -135,6 +180,30 @@
   </div>
 
   <script>
+    // === NOVA FUNÇÃO PRAZO ===
+    function getDeadlineColorClass(prazo) {
+      // Suporta "dd/mm/yyyy", "yyyy-mm-dd" ou vazio
+      if (!prazo || prazo === "-" || prazo === "") return "";
+      let deadline;
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(prazo)) {
+        // dd/mm/yyyy
+        let [d, m, y] = prazo.split('/');
+        deadline = new Date(`${y}-${m}-${d}T23:59:59`);
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(prazo)) {
+        deadline = new Date(`${prazo}T23:59:59`);
+      } else {
+        return "";
+      }
+      const now = new Date();
+      now.setHours(0,0,0,0);
+      deadline.setHours(0,0,0,0);
+      const diffDays = Math.floor((deadline - now) / (1000 * 60 * 60 * 24));
+      if (diffDays < 0) return "kanban-card-red";
+      if (diffDays <= 7) return "kanban-card-yellow";
+      if (diffDays > 7) return "kanban-card-green";
+      return "";
+    }
+
     // Sidebar menu responsivo
     const menuToggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');
@@ -206,6 +275,9 @@
     function createCard(text, prazo = '', nextPhase = '', responsavel = '') {
       const card = document.createElement('div');
       card.className = 'kanban-card';
+      // === ADICIONA COR DO PRAZO ===
+      card.classList.add(getDeadlineColorClass(prazo));
+      // =============================
       card.draggable = true;
       card.tabIndex = 0;
       card.textContent = text;
@@ -282,6 +354,9 @@
           span.textContent = val;
           card.dataset.deadline = val;
           input.replaceWith(span);
+          // Atualiza cor ao editar prazo
+          card.classList.remove("kanban-card-red", "kanban-card-yellow", "kanban-card-green");
+          card.classList.add(getDeadlineColorClass(val));
           span.addEventListener('click', arguments.callee);
           saveKanbanToLocalStorage();
         });
@@ -468,7 +543,7 @@
     });
   </script>
 
-    <style>
+  <style>
     /* --- Ajuste para scroll horizontal suave e sem seleção de texto no mobile --- */
     .kanban-board, .table-container {
       -webkit-overflow-scrolling: touch;
@@ -605,12 +680,11 @@
 })();
 </script>
 
-
   <script src="darkmode.js"></script>
 </body>
 
 <footer class="footer">
-  <div class="footer-content">
+  <div class="footer-content" style="display: flex; justify-content: space-between; align-items: center;">
     <div class="footer-logo-group">
       <img src="assets/syncnex-logo-64x64.png" alt="Logo SyncNex" class="footer-logo" />
       <div>
@@ -624,6 +698,8 @@
       <a href="#">Política de Privacidade</a>
       <a href="#">Termos de Uso</a>
     </nav>
+      <span class="versao">Versão <b>V1.0.0</b></span>
+    </div>
   </div>
 </footer>
 </html>

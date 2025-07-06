@@ -6,6 +6,28 @@
   <title>SyncNex - CSN</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="/assets/syncnex-favicon.png">
+  <style>
+    .kanban-info {
+      font-size: 12px;
+      color: #656d7a;
+      background: #f6f7f9;
+      border-radius: 5px;
+      margin-top: 4px;
+      padding: 4px 7px;
+    }
+    body.dark-mode .kanban-info {
+      background: #222831;
+      color: #ffe144;
+    }
+    .edit-card-input {
+      font-size: 15px;
+      width: 96%;
+      border-radius: 4px;
+      border: 1px solid #aaa;
+      margin-bottom: 3px;
+      margin-top: 2px;
+    }
+  </style>
 </head>
 <body>
   <button id="toggle-mode" class="darkmode-btn" title="Alternar modo escuro">🌓</button>
@@ -30,65 +52,62 @@
       </ul>
     </aside>
 
-    <!-- Novo Kanban moderno -->
+    <!-- Kanban moderno -->
     <main class="main-content">
-  <h2 class="titulo">Kanban - Atividades</h2>
-  <div class="kanban-board" id="kanbanBoard">
-    <!-- Colunas Kanban -->
-    <section class="kanban-column to-do" data-status="todo">
-      <header>A FAZER</header>
-      <div class="kanban-cards" id="todo"></div>
-      <form class="add-card-form" onsubmit="addCard(event, 'todo')">
-        <input type="text" placeholder="Novo item..." required />
-        <button type="submit">+</button>
-      </form>
-    </section>
-    <section class="kanban-column doing" data-status="doing">
-      <header>FAZENDO</header>
-      <div class="kanban-cards" id="doing"></div>
-      <form class="add-card-form" onsubmit="addCard(event, 'doing')">
-        <input type="text" placeholder="Novo item..." required />
-        <button type="submit">+</button>
-      </form>
-    </section>
-    <section class="kanban-column analyzing" data-status="analyzing">
-      <header>EM ANÁLISE</header>
-      <div class="kanban-cards" id="analyzing"></div>
-      <form class="add-card-form" onsubmit="addCard(event, 'analyzing')">
-        <input type="text" placeholder="Novo item..." required />
-        <button type="submit">+</button>
-      </form>
-    </section>
-    <section class="kanban-column paused" data-status="paused">
-      <header>PAUSADO</header>
-      <div class="kanban-cards" id="paused"></div>
-      <form class="add-card-form" onsubmit="addCard(event, 'paused')">
-        <input type="text" placeholder="Novo item..." required />
-        <button type="submit">+</button>
-      </form>
-    </section>
-    <section class="kanban-column done" data-status="done">
-      <header>CONCLUÍDO</header>
-      <div class="kanban-cards" id="done"></div>
-      <form class="add-card-form" onsubmit="addCard(event, 'done')">
-        <input type="text" placeholder="Novo item..." required />
-        <button type="submit">+</button>
-      </form>
-    </section>
-  </div>
-</main>
+      <h2 class="titulo">Kanban - Atividades</h2>
+      <div class="kanban-board" id="kanbanBoard">
+        <!-- Colunas Kanban -->
+        <section class="kanban-column to-do" data-status="todo">
+          <header>A FAZER</header>
+          <div class="kanban-cards" id="todo"></div>
+          <form class="add-card-form" onsubmit="addCard(event, 'todo')">
+            <input type="text" placeholder="Novo item..." required />
+            <button type="submit">+</button>
+          </form>
+        </section>
+        <section class="kanban-column doing" data-status="doing">
+          <header>FAZENDO</header>
+          <div class="kanban-cards" id="doing"></div>
+          <form class="add-card-form" onsubmit="addCard(event, 'doing')">
+            <input type="text" placeholder="Novo item..." required />
+            <button type="submit">+</button>
+          </form>
+        </section>
+        <section class="kanban-column analyzing" data-status="analyzing">
+          <header>EM ANÁLISE</header>
+          <div class="kanban-cards" id="analyzing"></div>
+          <form class="add-card-form" onsubmit="addCard(event, 'analyzing')">
+            <input type="text" placeholder="Novo item..." required />
+            <button type="submit">+</button>
+          </form>
+        </section>
+        <section class="kanban-column paused" data-status="paused">
+          <header>PAUSADO</header>
+          <div class="kanban-cards" id="paused"></div>
+          <form class="add-card-form" onsubmit="addCard(event, 'paused')">
+            <input type="text" placeholder="Novo item..." required />
+            <button type="submit">+</button>
+          </form>
+        </section>
+        <section class="kanban-column done" data-status="done">
+          <header>CONCLUÍDO</header>
+          <div class="kanban-cards" id="done"></div>
+          <form class="add-card-form" onsubmit="addCard(event, 'done')">
+            <input type="text" placeholder="Novo item..." required />
+            <button type="submit">+</button>
+          </form>
+        </section>
+      </div>
+    </main>
     <!-- FIM main-content -->
   </div>
 
   <script>
     const menuToggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');
-
     menuToggle.addEventListener('click', function () {
       sidebar.classList.toggle('active');
     });
-
-    // Fecha sidebar ao clicar fora dela
     document.addEventListener('click', function (e) {
       if (
         window.innerWidth <= 768 &&
@@ -102,80 +121,226 @@
   </script>
 
   <script src="darkmode.js"></script>
-
   <script>
-// Dados iniciais (pode mudar para seu contexto)
-const initialKanban = {
-  todo: ['3D: Criação de Peças', 'TI: Criação de Landing Page'],
-  doing: ['Social Media: MKT Influência'],
-  analyzing: ['TI: Desenvolvimento de Site'],
-  paused: ['MKT: Trabalho'],
-  done: ['Compras: Orçamento']
-};
+    // Mapeamento da próxima fase
+    const nextPhaseMap = {
+      todo: "Fazendo",
+      doing: "Em Análise",
+      analyzing: "Pausado",
+      paused: "Concluído",
+      done: "-"
+    };
 
-// Função para criar o card Kanban (drag&drop)
-function createCard(text) {
-  const card = document.createElement('div');
-  card.className = 'kanban-card';
-  card.draggable = true;
-  card.textContent = text;
-  card.addEventListener('dragstart', handleDragStart);
-  card.addEventListener('dragend', handleDragEnd);
-  return card;
-}
+    // Dados iniciais
+    const initialKanban = {
+      todo: [
+        { text: '3D: Criação de Peças', prazo: '15/07/2025', next: 'Fazendo', responsavel: 'Carlos' },
+        { text: 'TI: Criação de Landing Page', prazo: '20/07/2025', next: 'Fazendo', responsavel: 'Marina' }
+      ],
+      doing: [
+        { text: 'Social Media: MKT Influência', prazo: '22/07/2025', next: 'Em Análise', responsavel: 'Fernanda' }
+      ],
+      analyzing: [
+        { text: 'TI: Desenvolvimento de Site', prazo: '25/07/2025', next: 'Pausado', responsavel: 'João' }
+      ],
+      paused: [
+        { text: 'MKT: Trabalho', prazo: '01/08/2025', next: 'Concluído', responsavel: 'Luciana' }
+      ],
+      done: [
+        { text: 'Compras: Orçamento', prazo: '-', next: '-', responsavel: 'Equipe' }
+      ]
+    };
 
-// Inicializa o quadro com os cards iniciais
-function initKanban() {
-  for (const status in initialKanban) {
-    const container = document.getElementById(status);
-    container.innerHTML = '';
-    initialKanban[status].forEach(text => {
-      container.appendChild(createCard(text));
-    });
-  }
-}
-initKanban();
+    // Criação dos cards Kanban (drag&drop e edição inline)
+    function createCard(text, prazo = '', nextPhase = '', responsavel = '') {
+      const card = document.createElement('div');
+      card.className = 'kanban-card';
+      card.draggable = true;
+      card.tabIndex = 0;
+      card.textContent = text;
+      card.dataset.name = text;
+      card.dataset.deadline = prazo;
+      card.dataset.next = nextPhase;
+      card.dataset.responsavel = responsavel;
 
-// Adicionar novo card
-function addCard(event, status) {
-  event.preventDefault();
-  const input = event.target.querySelector('input');
-  const text = input.value.trim();
-  if (!text) return;
-  const card = createCard(text);
-  document.getElementById(status).appendChild(card);
-  input.value = '';
-}
+      // Container info
+      const info = document.createElement('div');
+      info.className = 'kanban-info';
+      info.style.display = 'none';
+      info.innerHTML = `
+        <strong>Próxima fase:</strong> <span class="next-phase" tabindex="0">${nextPhase}</span><br>
+        <strong>Prazo:</strong> <span class="deadline" tabindex="0">${prazo}</span><br>
+        <strong>Responsável:</strong> <span class="responsavel" tabindex="0">${responsavel}</span>
+      `;
+      card.appendChild(info);
 
-// Drag and drop handlers
-let draggedCard = null;
+      // Clique simples: mostrar/ocultar info
+      card.addEventListener('click', function (e) {
+        if (e.target === card) {
+          info.style.display = info.style.display === 'none' ? 'block' : 'none';
+        }
+      });
 
-function handleDragStart(e) {
-  draggedCard = this;
-  this.classList.add('dragging');
-}
+      // Clique simples na próxima fase para editar
+      info.querySelector('.next-phase').addEventListener('click', function (e) {
+        e.stopPropagation();
+        let input = document.createElement('input');
+        input.value = this.textContent;
+        input.className = 'edit-card-input';
+        this.replaceWith(input);
+        input.focus();
 
-function handleDragEnd(e) {
-  this.classList.remove('dragging');
-  draggedCard = null;
-}
+        input.addEventListener('blur', () => {
+          const span = document.createElement('span');
+          span.className = 'next-phase';
+          span.setAttribute('tabindex', '0');
+          span.textContent = input.value;
+          input.replaceWith(span);
+          card.dataset.next = input.value;
+          span.addEventListener('click', arguments.callee);
+        });
+        input.addEventListener('keydown', function(ev) {
+          if (ev.key === 'Enter') input.blur();
+        });
+      });
 
-document.querySelectorAll('.kanban-cards').forEach(column => {
-  column.addEventListener('dragover', function(e) {
-    e.preventDefault();
-    if (draggedCard && !this.contains(draggedCard)) {
-      this.appendChild(draggedCard);
+      // Clique simples no prazo para editar
+      info.querySelector('.deadline').addEventListener('click', function (e) {
+        e.stopPropagation();
+        let input = document.createElement('input');
+        input.value = this.textContent;
+        input.className = 'edit-card-input';
+        input.type = 'date';
+        // Se já é uma data válida, converter para o formato YYYY-MM-DD
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(input.value)) {
+          const [d, m, y] = input.value.split('/');
+          input.value = `${y}-${m}-${d}`;
+        }
+        this.replaceWith(input);
+        input.focus();
+
+        input.addEventListener('blur', () => {
+          const span = document.createElement('span');
+          span.className = 'deadline';
+          span.setAttribute('tabindex', '0');
+          let val = input.value;
+          // Converte de YYYY-MM-DD para DD/MM/YYYY
+          if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+            const [y, m, d] = val.split('-');
+            val = `${d}/${m}/${y}`;
+          }
+          span.textContent = val;
+          card.dataset.deadline = val;
+          input.replaceWith(span);
+          span.addEventListener('click', arguments.callee);
+        });
+        input.addEventListener('keydown', function(ev) {
+          if (ev.key === 'Enter') input.blur();
+        });
+      });
+
+      // Clique simples no responsável para editar
+      info.querySelector('.responsavel').addEventListener('click', function (e) {
+        e.stopPropagation();
+        let input = document.createElement('input');
+        input.value = this.textContent;
+        input.className = 'edit-card-input';
+        this.replaceWith(input);
+        input.focus();
+
+        input.addEventListener('blur', () => {
+          const span = document.createElement('span');
+          span.className = 'responsavel';
+          span.setAttribute('tabindex', '0');
+          span.textContent = input.value;
+          input.replaceWith(span);
+          card.dataset.responsavel = input.value;
+          span.addEventListener('click', arguments.callee);
+        });
+        input.addEventListener('keydown', function(ev) {
+          if (ev.key === 'Enter') input.blur();
+        });
+      });
+
+      // Duplo clique: editar nome do card
+      card.addEventListener('dblclick', function (e) {
+        if (e.target === card) {
+          e.stopPropagation();
+          let input = document.createElement('input');
+          input.value = card.dataset.name;
+          input.className = 'edit-card-input';
+          card.insertBefore(input, info);
+          input.focus();
+          card.childNodes[0].nodeValue = '';
+          input.addEventListener('blur', function () {
+            card.dataset.name = input.value;
+            card.childNodes[0].nodeValue = input.value;
+            card.removeChild(input);
+          });
+          input.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Enter') input.blur();
+          });
+        }
+      });
+
+      card.addEventListener('dragstart', handleDragStart);
+      card.addEventListener('dragend', handleDragEnd);
+
+      return card;
     }
-  });
-});
-</script>
 
+    // Inicializa o quadro com os cards iniciais
+    function initKanban() {
+      for (const status in initialKanban) {
+        const container = document.getElementById(status);
+        container.innerHTML = '';
+        initialKanban[status].forEach(obj => {
+          container.appendChild(createCard(obj.text, obj.prazo, obj.next, obj.responsavel));
+        });
+      }
+    }
+    initKanban();
+
+    // Adicionar novo card
+    function addCard(event, status) {
+      event.preventDefault();
+      const input = event.target.querySelector('input');
+      const text = input.value.trim();
+      if (!text) return;
+      // Prompt para prazo e responsável
+      const prazo = prompt("Prazo para ir para a próxima fase (ex: 12/07/2025):", "");
+      const responsavel = prompt("Responsável:", "");
+      const nextPhase = nextPhaseMap[status] || "";
+      const card = createCard(text, prazo, nextPhase, responsavel);
+      document.getElementById(status).appendChild(card);
+      input.value = '';
+    }
+
+    // Drag and drop handlers
+    let draggedCard = null;
+    function handleDragStart(e) {
+      draggedCard = this;
+      this.classList.add('dragging');
+    }
+    function handleDragEnd(e) {
+      this.classList.remove('dragging');
+      draggedCard = null;
+    }
+    document.querySelectorAll('.kanban-cards').forEach(column => {
+      column.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        if (draggedCard && !this.contains(draggedCard)) {
+          this.appendChild(draggedCard);
+        }
+      });
+    });
+  </script>
 </body>
 
 <footer class="footer">
   <div class="footer-content">
     <div class="footer-logo-group">
-      <img src="../assets/syncnex-logo-64x64.png" alt="Logo SyncNex" class="footer-logo" />
+      <img src="assets/syncnex-logo-64x64.png" alt="Logo SyncNex" class="footer-logo" />
       <div>
         <span class="footer-title">SyncNex &copy; 2025</span>
         <span class="footer-slogan">Conectando eficiência ao seu negócio</span>

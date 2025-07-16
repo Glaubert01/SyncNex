@@ -1560,17 +1560,14 @@ sidebar.dark-mode {
 
 body.dark-mode .sidebar a, body.dark-mode .sidebar li { color: #ffe144 !important; }
 
-.sidebar {
-  width: 240px;
-  /* ...outros estilos */
-}
 #map {
   position: absolute;
   top: 0;
-  left: 240px;
+  left: 240px;         /* Largura do menu lateral */
   width: calc(100vw - 240px);
   height: 100vh;
   z-index: 1;
 }
+
 
 

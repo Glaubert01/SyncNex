@@ -1553,3 +1553,7 @@ body.dark-mode .ss-table tbody tr:hover {
 menu.dark-mode {
   color:#ffe144;
 }
+
+sidebar.dark-mode {
+  color:#ffe144;
+}

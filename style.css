@@ -1549,3 +1549,7 @@ body.dark-mode .ss-receivables { background: #233a6d; }
 body.dark-mode .ss-table tbody tr:hover {
   background: rgba(70, 125, 200, 0.18) !important;
 }
+
+menu.dark-mode {
+  color:#ffe144;
+}

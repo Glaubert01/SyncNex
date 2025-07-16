@@ -51,7 +51,7 @@
     }
     .footer { position: fixed; left: 0; bottom: 0; width: 100vw; z-index: 99;
       background: rgba(10,16,30,0.94); box-shadow: 0 -4px 24px #0003; color: #fff; }
-    .sidebar { z-index: 20; display: block !important; } /* <<< Linha essencial */
+    .sidebar { z-index: 20; display: block !important; } /* <--- ADICIONADO */
   </style>
 </head>
 <body>
@@ -94,6 +94,7 @@
   <div id="map"></div>
 
   <script>
+    // Timer countdown
     let seconds = 60;
     function updateTimer() {
       document.getElementById('timerValue').textContent = seconds < 10 ? `00:0${seconds}` : `00:${seconds}`;
@@ -104,9 +105,11 @@
   </script>
   <script>
     let map, drawingManager;
-    let drawnAreas = [];
+    let drawnAreas = []; // {polygon, label, data, btn}
     let selectedColor = "#2196f3";
     let loadedAreas = false;
+
+    // ---- PERSISTÊNCIA ----
     function saveAreasToStorage() {
       const areasData = drawnAreas.map(area => ({
         path: area.polygon.getPath().getArray().map(ll => ({lat: ll.lat(), lng: ll.lng()})),
@@ -136,6 +139,8 @@
         });
       } catch(e) { console.warn('Erro carregando áreas salvas', e); }
     }
+
+    // ---- COR SELECIONADA ----
     function setPolygonColor(color) {
       selectedColor = color;
       if (drawingManager) {
@@ -159,25 +164,32 @@
           setPolygonColor(this.dataset.color);
         }
       });
+      // Atualizar cor se custom
       document.getElementById('customColor').addEventListener('input',function(){
         document.querySelectorAll('.color-circle').forEach(x=>x.classList.remove('selected'));
         setPolygonColor(this.value);
       });
       document.querySelector('.color-circle[data-color="#2196f3"]').classList.add('selected');
     });
+
+    // ---- FUNÇÕES AUXILIARES PARA POLYGON ----
     function getPolygonCenter(poly) {
       let path = poly.getPath().getArray();
       let bounds = new google.maps.LatLngBounds();
       path.forEach(ll=>bounds.extend(ll));
       return bounds.getCenter();
     }
+
     function closeAllLabels() {
       drawnAreas.forEach(({label})=>{if(label) label.close();});
     }
+
     function createLabelForPolygon(polygon, areaObj) {
       const center = getPolygonCenter(polygon);
       const content = document.createElement('div');
       content.className = 'custom-label-box';
+
+      // Botão de deletar
       const deleteBtn = document.createElement('button');
       deleteBtn.className = "delete-area-btn";
       deleteBtn.innerHTML = "&#10005;";
@@ -189,26 +201,34 @@
         saveAreasToStorage();
       };
       content.appendChild(deleteBtn);
+
+      // Nome da área
       const nameDiv = document.createElement('div');
       nameDiv.className = 'area-title';
       nameDiv.textContent = areaObj.name || "(sem nome)";
       content.appendChild(nameDiv);
+
+      // Info de vínculo
       if (areaObj.parent) {
         const parentDiv = document.createElement('div');
         parentDiv.className = "area-parent";
         parentDiv.textContent = "Vínculo: " + areaObj.parent;
         content.appendChild(parentDiv);
       }
+
+      // Cria a InfoWindow
       const infowindow = new google.maps.InfoWindow({
         content, position: center, pixelOffset: new google.maps.Size(0,-8)
       });
       return infowindow;
     }
+
     function findParentArea(polygon) {
       const childPath = polygon.getPath().getArray();
       let parentName = null;
       drawnAreas.forEach(area => {
         if (area.polygon !== polygon) {
+          // Contém todos pontos do child dentro do parent?
           let parentPoly = area.polygon;
           if(childPath.every(ll => google.maps.geometry.poly.containsLocation(ll, parentPoly))) {
             parentName = area.data.name;
@@ -217,30 +237,40 @@
       });
       return parentName;
     }
+
     function handlePolygonComplete(polygon, preName, color, preParent) {
       let areaName = preName;
       if (!areaName) {
         areaName = prompt("Nome da Área:", "") || "Área " + (drawnAreas.length+1);
       }
       let areaColor = color || selectedColor;
+      // Verifica vínculo
       let parentName = preParent;
       if (!parentName) {
         parentName = findParentArea(polygon);
       }
+      // Dados do areaObj
       let areaObj = {
         polygon,
         data: { name: areaName, color: areaColor, parent: parentName },
         label: null,
         btn: null
       };
+
       polygon.setOptions({ fillColor: areaColor, strokeColor: areaColor });
+
+      // Cria label e botão de exclusão
       let label = createLabelForPolygon(polygon, areaObj.data);
       areaObj.label = label;
+
+      // Exibe label ao clicar na área
       google.maps.event.addListener(polygon, 'click', function(event){
         closeAllLabels();
         label.setPosition(getPolygonCenter(polygon));
         label.open(map);
       });
+
+      // Atualiza label ao editar a área
       google.maps.event.addListener(polygon.getPath(), 'set_at', function(){
         let c = getPolygonCenter(polygon);
         label.setPosition(c);
@@ -255,18 +285,24 @@
         label.setPosition(getPolygonCenter(polygon));
         saveAreasToStorage();
       });
+
+      // Atualiza cor se editar
       google.maps.event.addListener(polygon, 'rightclick', function(event){
         // Futuro: popup menu para cor/nome?
       });
+
+      // Persistência ao deletar
       google.maps.event.addListener(polygon, 'map_changed', function(){
         if(!polygon.getMap()){
           drawnAreas = drawnAreas.filter(a => a.polygon !== polygon);
           saveAreasToStorage();
         }
       });
+
       drawnAreas.push(areaObj);
       saveAreasToStorage();
     }
+
     function clearAllAreas() {
       drawnAreas.forEach(({polygon,label}) => {
         if(label) label.close();
@@ -275,11 +311,13 @@
       drawnAreas = [];
       saveAreasToStorage();
     }
+
     function initMap() {
       map = new google.maps.Map(document.getElementById('map'), {
         center: {lat: -22.5162, lng: -44.0948}, zoom: 15, mapTypeId: 'roadmap',
         streetViewControl: true, fullscreenControl: true,
       });
+
       drawingManager = new google.maps.drawing.DrawingManager({
         drawingMode: null, drawingControl: false,
         polygonOptions: {
@@ -288,6 +326,8 @@
         }
       });
       drawingManager.setMap(map);
+
+      // Trocar cor ao clicar nas opções
       document.querySelectorAll('.color-circle, #customColor').forEach(el => {
         el.addEventListener('click', function(){
           setPolygonColor(selectedColor);
@@ -296,12 +336,15 @@
           setPolygonColor(selectedColor);
         });
       });
+
+      // Ao desenhar uma nova área
       google.maps.event.addListener(drawingManager, 'polygoncomplete', function(polygon) {
         polygon.setOptions({ fillColor: selectedColor, strokeColor: selectedColor });
         handlePolygonComplete(polygon);
         drawingManager.setDrawingMode(null);
         document.getElementById('drawAreaBtn').classList.remove('active');
       });
+
       document.getElementById('drawAreaBtn').onclick = function() {
         setPolygonColor(selectedColor);
         drawingManager.setDrawingMode('polygon');
@@ -318,11 +361,15 @@
         this.classList.add('active');
         document.getElementById('mapBtn').classList.remove('active');
       };
+
+      // Carrega áreas salvas só uma vez
       if(!loadedAreas){
         loadedAreas = true;
+        // Precisa da lib geometry para containsLocation!
         google.maps.event.addListenerOnce(map, 'idle', function(){
           if(google.maps.geometry) loadAreasFromStorage();
           else {
+            // Recarrega a página com lib geometry
             if(!window._geoLoaded){
               window._geoLoaded = true;
               let scr = document.createElement('script');
@@ -334,8 +381,10 @@
       }
     }
   </script>
+  <!-- Troque YOUR_GOOGLE_MAPS_API_KEY por sua key -->
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing,geometry&callback=initMap" async defer></script>
   <script>
+    // Sidebar responsivo
     const menuToggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');
     menuToggle.addEventListener('click', function () {

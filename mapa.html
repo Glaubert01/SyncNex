@@ -167,6 +167,7 @@
     let loadedAreas = false;
     let solicitacoes = [];
     let solicMarkers = [];
+    let rotaAnimadaPolyline = null; // NOVO
 
     // ---- PERSISTÊNCIA GEOAREAS ----
     function saveAreasToStorage() {
@@ -211,6 +212,11 @@
       // Remove markers antigos
       solicMarkers.forEach(m=>m.setMap(null));
       solicMarkers = [];
+      // Remove rota sugerida animada se existir
+      if (rotaAnimadaPolyline) {
+        rotaAnimadaPolyline.setMap(null);
+        rotaAnimadaPolyline = null;
+      }
       if (!map || !drawnAreas.length) return;
       solicitacoes.forEach((solic, idx) => {
         // Pega centro da geoarea de destino
@@ -232,6 +238,82 @@
           solicMarkers.push(marker);
         }
       });
+      // --- NOVO: desenhar e animar rota sugerida ---
+      desenharRotaSugeridaAnimada();
+    }
+
+    // --- NOVO: Função para desenhar a rota sugerida animada ---
+    function desenharRotaSugeridaAnimada() {
+      // 1. Filtrar solicitações destino que tenham geoáreas parent em comum
+      // Map: parentName => [geoareas destino]
+      let parentGroups = {};
+      solicitacoes.forEach(solic => {
+        let destinoArea = drawnAreas.find(a=>a.data.name === solic.destino);
+        if(destinoArea && destinoArea.data.parent) {
+          let parent = destinoArea.data.parent;
+          if (!parentGroups[parent]) parentGroups[parent] = [];
+          // Evita adicionar a mesma geoarea mais de uma vez na rota
+          if (!parentGroups[parent].some(x=>x.data.name===destinoArea.data.name)) {
+            parentGroups[parent].push(destinoArea);
+          }
+        }
+      });
+      // 2. Para cada parent com 2+ destinos, ordenar por longitude (direita p/esquerda)
+      Object.keys(parentGroups).forEach(parentName => {
+        let group = parentGroups[parentName];
+        if (group.length < 2) return;
+        // Ordenar por lng decrescente (direita -> esquerda)
+        group.sort((a, b) => b.polygon.getPath().getArray()[0].lng() - a.polygon.getPath().getArray()[0].lng());
+        // Pegar centros dos polígonos
+        let centers = group.map(g => getPolygonCenter(g.polygon));
+        // Animar desenhando uma polilinha entre eles
+        animarPolyline(centers);
+      });
+    }
+
+    // --- NOVO: Função para animar uma polilinha no mapa ---
+    function animarPolyline(centers) {
+      if (!centers.length) return;
+      let animationSpeed = 8; // ms por ponto
+      let path = [];
+      if (rotaAnimadaPolyline) {
+        rotaAnimadaPolyline.setMap(null);
+        rotaAnimadaPolyline = null;
+      }
+      rotaAnimadaPolyline = new google.maps.Polyline({
+        path: [],
+        geodesic: true,
+        strokeColor: "#e53935",
+        strokeOpacity: 0.9,
+        strokeWeight: 4,
+        map: map
+      });
+
+      // Gerar lista de todos os pontos intermediários
+      let fullPath = [];
+      for (let i = 0; i < centers.length - 1; i++) {
+        let start = centers[i];
+        let end = centers[i+1];
+        // Interpolar (passos) para animação suave
+        let steps = 40;
+        for (let t = 0; t < steps; t++) {
+          let lat = start.lat() + (end.lat() - start.lat()) * (t/steps);
+          let lng = start.lng() + (end.lng() - start.lng()) * (t/steps);
+          fullPath.push(new google.maps.LatLng(lat, lng));
+        }
+      }
+      fullPath.push(centers[centers.length-1]);
+      // Anima
+      let i = 0;
+      function stepAnim() {
+        if (i < fullPath.length) {
+          let p = rotaAnimadaPolyline.getPath();
+          p.push(fullPath[i]);
+          i++;
+          setTimeout(stepAnim, animationSpeed);
+        }
+      }
+      stepAnim();
     }
 
     // ---- COR SELECIONADA ----

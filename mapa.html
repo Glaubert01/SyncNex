@@ -7,54 +7,134 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="assets/syncnex-favicon.png">
   <style>
-    html, body { height: 100%; margin: 0; padding: 0; font-family: Roboto, Arial, sans-serif; }
-    #map { width: 100vw; height: 100vh; position: absolute; left: 0; top: 0; z-index: 1; }
+    html, body {
+      height: 100%; margin: 0; padding: 0;
+      font-family: Roboto, Arial, sans-serif;
+    }
+    #map {
+      width: 100vw; height: 100vh;
+      position: absolute; left: 0; top: 0; z-index: 1;
+    }
     .custom-controls {
-      position: absolute; top: 10px; left: 180px; z-index: 5; display: flex; gap: 12px;
+      position: absolute;
+      top: 10px; left: 180px;
+      z-index: 5;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: transparent;
     }
     .custom-controls button, .custom-controls input[type="color"] {
-      padding: 8px 13px; background: #fff; border: 1px solid #ddd; border-radius: 4px;
-      font-size: 1rem; cursor: pointer; font-weight: bold; box-shadow: 0 2px 6px #0001;
+      padding: 8px 16px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 2px 6px #0001;
       transition: background .2s;
+      margin-right: 0;
+      outline: none;
+    }
+    .custom-controls input[type="color"] {
+      width: 28px; height: 28px;
+      padding: 0; border: 2px solid #888;
+      background: none;
+      cursor: pointer;
+      box-shadow: none;
     }
     .custom-controls button.active,
-    .custom-controls button:hover { background: #e8e8e8; }
-    .color-picker {
-      display: flex; align-items: center; gap: 4px;
+    .custom-controls button:hover {
+      background: #e8e8e8;
     }
-    .color-circle {
-      width: 24px; height: 24px; border-radius: 50%; border: 2px solid #ddd; cursor: pointer;
-      margin-right: 2px; display: inline-block;
-    }
-    .color-circle.selected { border: 3px solid #2196f3; }
     .timer-bar {
-      position: absolute; left: 190px; top: 0; font-size: 14px; color: #444; z-index: 10;
-      background: #fafafadb; padding: 2px 16px 2px 8px; border-radius: 0 0 8px 8px; border-bottom: 1px solid #ddd;
+      position: absolute;
+      left: 190px; top: 0;
+      font-size: 14px;
+      color: #444;
+      z-index: 10;
+      background: #fafafadb;
+      padding: 2px 16px 2px 8px;
+      border-radius: 0 0 8px 8px;
+      border-bottom: 1px solid #ddd;
     }
-    /* Label personalizada para áreas */
-    .custom-label-box {
-      background: #fff; border-radius: 12px; padding: 6px 16px 14px 16px;
-      box-shadow: 0 2px 10px #0002; border: 1px solid #eee;
-      position: relative; min-width: 80px; display: flex; flex-direction: column; align-items: center;
-      font-size: 1rem;
+    /* Balão customizado para nomear/excluir área */
+    .polygon-label-box {
+      position: absolute;
+      background: #fff;
+      box-shadow: 0 4px 24px #0004;
+      border-radius: 10px;
+      padding: 12px 10px 10px 10px;
+      text-align: center;
+      min-width: 140px;
+      min-height: 55px;
+      z-index: 10;
+      border: 1px solid #e5e5e5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
     }
-    .custom-label-box .delete-area-btn {
-      position: absolute; top: 2px; right: 7px; color: #b21c1c;
-      background: transparent; border: none; font-size: 22px; cursor: pointer; font-weight: bold;
+    .polygon-label-box input[type="text"] {
+      width: 80px;
+      padding: 4px 6px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: 1px solid #aaa;
+      text-align: center;
+      margin-bottom: 3px;
     }
-    .custom-label-box .area-title {
-      margin-top: 8px; margin-bottom: 3px; font-size: 1.05rem; font-weight: 600;
-      background: #e9f7fa; padding: 3px 10px; border-radius: 6px; border: 1px solid #b8d0db;
-      color: #118; display: inline-block;
+    .polygon-label-box button {
+      background: #fa3e3e;
+      border: none;
+      color: #fff;
+      border-radius: 5px;
+      padding: 2px 12px;
+      cursor: pointer;
+      margin: 0 2px;
+      font-size: 15px;
     }
-    .custom-label-box .area-parent {
-      font-size: 0.9em; color: #757575; margin-top: 2px;
+    .polygon-label-box button.close-btn {
+      background: #e3e3e3; color: #333;
+      font-size: 18px;
+      padding: 0 8px;
+      position: absolute;
+      top: 2px; right: 8px;
     }
-    /* Mantém footer visível acima do mapa */
-    .footer { position: fixed; left: 0; bottom: 0; width: 100vw; z-index: 99;
-      background: rgba(10,16,30,0.94); box-shadow: 0 -4px 24px #0003; color: #fff; }
-    /* Mostra sidebar */
-    .sidebar { z-index: 20; }
+    .polygon-label-box .polygon-parent-info {
+      font-size: 11px; color: #777; margin-top: 3px;
+    }
+    /* Sidebar sempre visível */
+    .container, .main-content, .table-container, .em-construcao {
+      display: block !important;
+    }
+    #map {
+      left: 0;
+    }
+    /* Coloca o mapa atrás do conteúdo lateral */
+    .container {
+      position: relative;
+      z-index: 10;
+    }
+    .sidebar {
+      z-index: 11;
+      background: #171a22f8;
+    }
+    .main-content {
+      z-index: 12;
+      position: relative;
+    }
+    .footer {
+      position: fixed; left: 0; bottom: 0; width: 100vw;
+      z-index: 99;
+      background: rgba(10,16,30,0.94);
+      box-shadow: 0 -4px 24px #0003;
+      color: #fff;
+    }
+    @media (max-width: 900px) {
+      .custom-controls, .timer-bar { left: 10px; }
+    }
   </style>
 </head>
 <body>
@@ -62,7 +142,9 @@
   <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu">&#9776;</button>
   <div class="container">
     <aside class="sidebar" id="sidebar">
-      <a href="index.html"><img src="/assets/logo-csn.png" alt="Logo CSN" class="logo-csn" /></a>
+      <a href="index.html">
+        <img src="/assets/logo-csn.png" alt="Logo CSN" class="logo-csn" />
+      </a>
       <ul class="menu">
         <li><a href="absenteismo.html">Absenteismo</a></li>
         <li><a href="contratos.html">Contratos</a></li>
@@ -73,287 +155,256 @@
         <li><a href="kanban.html">Kanban</a></li>
         <li><a href="mttr.html">MTTR</a></li>
         <li><a href="mtbf.html">MTBF</a></li>
-        <li class="menu__item"><a href="organograma.html">Organograma</a></li>
+        <li class="menu__item"><a href="organograma.html">Organograma</a></li>                           
         <li><a href="projetos.html">Projetos</a></li>
         <li><a href="sobressalentes.html">Sobressalentes</a></li>
       </ul>
     </aside>
+    <main class="main-content">
+      <h2 class="titulo">GIL - Gerência de Transporte Ferroviário</h2>
+      <div class="table-container">
+        <table id="organograma"></table>
+      </div>
+      <div class="em-construcao">
+        <span class="construcao-icone" aria-label="Em construção">🚧</span>
+        <span class="construcao-txt">Página em construção</span>
+      </div>
+    </main>
   </div>
-
+  <!-- CONTROLES DO MAPA E MAPA GOOGLE -->
   <div class="timer-bar" id="timerBar">Próxima atualização em: <span id="timerValue">01:00</span></div>
   <div class="custom-controls">
     <button id="mapBtn" class="active">Mapa</button>
     <button id="satBtn">Satélite</button>
-    <div class="color-picker" title="Escolher cor da área">
-      <div class="color-circle" data-color="#2196f3" style="background:#2196f3;"></div>
-      <div class="color-circle" data-color="#43a047" style="background:#43a047;"></div>
-      <div class="color-circle" data-color="#ff9800" style="background:#ff9800;"></div>
-      <div class="color-circle" data-color="#e53935" style="background:#e53935;"></div>
-      <input type="color" id="customColor" value="#2196f3" style="width:34px;height:26px;">
-    </div>
+    <input type="color" id="colorPicker" value="#4287f5" title="Cor da Área">
     <button id="drawAreaBtn">Desenhar Área</button>
     <button id="clearBtn">Limpar Áreas</button>
+    <label style="margin-left:10px;"><input type="checkbox" id="reliefToggle"> Relevo</label>
   </div>
   <div id="map"></div>
-
   <script>
     // Timer countdown
     let seconds = 60;
     function updateTimer() {
       document.getElementById('timerValue').textContent = seconds < 10 ? `00:0${seconds}` : `00:${seconds}`;
-      if (seconds > 0) { seconds--; setTimeout(updateTimer, 1000);}
-      else { seconds = 60; setTimeout(updateTimer, 1000);}
+      if (seconds > 0) {
+        seconds--;
+        setTimeout(updateTimer, 1000);
+      } else {
+        seconds = 60;
+        setTimeout(updateTimer, 1000);
+      }
     }
     updateTimer();
   </script>
   <script>
-    let map, drawingManager;
-    let drawnAreas = []; // {polygon, label, data, btn}
-    let selectedColor = "#2196f3";
-    let loadedAreas = false;
-
-    // ---- PERSISTÊNCIA ----
-    function saveAreasToStorage() {
-      const areasData = drawnAreas.map(area => ({
-        path: area.polygon.getPath().getArray().map(ll => ({lat: ll.lat(), lng: ll.lng()})),
-        color: area.data.color,
-        name: area.data.name,
-        parent: area.data.parent || null
-      }));
-      localStorage.setItem("geoareas", JSON.stringify(areasData));
+    let map, drawingManager, drawnAreas = [];
+    let overlays = [];
+    let colorSelected = "#4287f5";
+    let reliefLayer = null;
+    let labelBoxes = [];
+    // Helpers
+    function areaCoordsToLatLngs(coords) {
+      return coords.map(([lat, lng]) => new google.maps.LatLng(lat, lng));
     }
-    function loadAreasFromStorage() {
-      const saved = localStorage.getItem("geoareas");
-      if (!saved) return;
-      try {
-        const data = JSON.parse(saved);
-        data.forEach(areaObj => {
-          const polygon = new google.maps.Polygon({
-            paths: areaObj.path,
-            fillColor: areaObj.color,
-            strokeColor: areaObj.color,
-            fillOpacity: 0.18,
-            strokeWeight: 2,
-            editable: true,
-            draggable: true,
-            map
-          });
-          handlePolygonComplete(polygon, areaObj.name, areaObj.color, areaObj.parent);
-        });
-      } catch(e) { console.warn('Erro carregando áreas salvas', e); }
+    function getPolygonBounds(polygon) {
+      const bounds = new google.maps.LatLngBounds();
+      polygon.getPath().forEach((p) => bounds.extend(p));
+      return bounds;
     }
-
-    // ---- COR SELECIONADA ----
-    function setPolygonColor(color) {
-      selectedColor = color;
-      if (drawingManager) {
-        drawingManager.setOptions({
-          polygonOptions: {
-            editable: true,
-            draggable: true,
-            strokeColor: color,
-            fillColor: color,
-            fillOpacity: 0.18,
-            strokeWeight: 2,
-          }
-        });
-      }
-    }
-    document.addEventListener('DOMContentLoaded', function(){
-      document.querySelectorAll('.color-circle').forEach(c=>{
-        c.onclick = function(){
-          document.querySelectorAll('.color-circle').forEach(x=>x.classList.remove('selected'));
-          this.classList.add('selected');
-          setPolygonColor(this.dataset.color);
-        }
-      });
-      // Atualizar cor se custom
-      document.getElementById('customColor').addEventListener('input',function(){
-        document.querySelectorAll('.color-circle').forEach(x=>x.classList.remove('selected'));
-        setPolygonColor(this.value);
-      });
-      document.querySelector('.color-circle[data-color="#2196f3"]').classList.add('selected');
-    });
-
-    // ---- FUNÇÕES AUXILIARES PARA POLYGON ----
-    function getPolygonCenter(poly) {
+    function pointInPolygon(point, poly) {
+      // Google Maps geometry lib is NOT loaded. Simple Ray Casting
+      let x = point.lat(), y = point.lng();
+      let inside = false;
       let path = poly.getPath().getArray();
-      let bounds = new google.maps.LatLngBounds();
-      path.forEach(ll=>bounds.extend(ll));
-      return bounds.getCenter();
-    }
-
-    function closeAllLabels() {
-      drawnAreas.forEach(({label})=>{if(label) label.close();});
-    }
-
-    function createLabelForPolygon(polygon, areaObj) {
-      const center = getPolygonCenter(polygon);
-      const content = document.createElement('div');
-      content.className = 'custom-label-box';
-
-      // Botão de deletar
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = "delete-area-btn";
-      deleteBtn.innerHTML = "&#10005;";
-      deleteBtn.title = "Excluir área";
-      deleteBtn.onclick = function(e) {
-        e.stopPropagation();
-        polygon.setMap(null);
-        drawnAreas = drawnAreas.filter(a => a.polygon !== polygon);
-        saveAreasToStorage();
-      };
-      content.appendChild(deleteBtn);
-
-      // Nome da área
-      const nameDiv = document.createElement('div');
-      nameDiv.className = 'area-title';
-      nameDiv.textContent = areaObj.name || "(sem nome)";
-      content.appendChild(nameDiv);
-
-      // Info de vínculo
-      if (areaObj.parent) {
-        const parentDiv = document.createElement('div');
-        parentDiv.className = "area-parent";
-        parentDiv.textContent = "Vínculo: " + areaObj.parent;
-        content.appendChild(parentDiv);
+      for (let i=0,j=path.length-1; i<path.length; j=i++) {
+        let xi=path[i].lat(), yi=path[i].lng();
+        let xj=path[j].lat(), yj=path[j].lng();
+        let intersect = ((yi > y) !== (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / (yj - yi + 0.0000001) + xi);
+        if (intersect) inside = !inside;
       }
-
-      // Cria a InfoWindow
-      const infowindow = new google.maps.InfoWindow({
-        content, position: center, pixelOffset: new google.maps.Size(0,-8)
-      });
-      return infowindow;
+      return inside;
     }
-
-    function findParentArea(polygon) {
-      const childPath = polygon.getPath().getArray();
-      let parentName = null;
-      drawnAreas.forEach(area => {
-        if (area.polygon !== polygon) {
-          // Contém todos pontos do child dentro do parent?
-          let parentPoly = area.polygon;
-          if(childPath.every(ll => google.maps.geometry.poly.containsLocation(ll, parentPoly))) {
-            parentName = area.data.name;
+    function getParentPolygonIdx(latlngs) {
+      // Busca polígono maior que contenha todos os pontos deste
+      for (let i=0; i<overlays.length; ++i) {
+        let poly = overlays[i].polygon;
+        if (poly.getPath().getArray().length <= latlngs.length) continue;
+        let inside = latlngs.every(p => pointInPolygon(p, poly));
+        if (inside) return i;
+      }
+      return null;
+    }
+    // Persistência
+    function saveAreas() {
+      localStorage.setItem("geo_areas", JSON.stringify(overlays.map(o=>{
+        return {
+          name: o.name,
+          color: o.color,
+          coords: o.polygon.getPath().getArray().map(ll=>[ll.lat(),ll.lng()]),
+          parent: o.parent
+        }
+      })));
+    }
+    function loadAreas() {
+      let areas = JSON.parse(localStorage.getItem("geo_areas")||"[]");
+      areas.forEach(area=>{
+        let polygon = new google.maps.Polygon({
+          paths: areaCoordsToLatLngs(area.coords),
+          strokeColor: area.color,
+          fillColor: area.color,
+          fillOpacity: 0.16,
+          strokeWeight: 2,
+          editable: false,
+          draggable: false,
+          map: map
+        });
+        let bounds = getPolygonBounds(polygon).getCenter();
+        let infowindow = null;
+        overlays.push({polygon, name: area.name, color: area.color, infowindow, parent: area.parent});
+        attachPolygonEvents(polygon, overlays.length-1);
+        addPolygonLabelBox(polygon, area.name, area.color, overlays.length-1, area.parent);
+      });
+    }
+    // Cria balão de nomeação e exclusão
+    function addPolygonLabelBox(polygon, name, color, idx, parentIdx) {
+      let bounds = getPolygonBounds(polygon).getCenter();
+      let div = document.createElement("div");
+      div.className = "polygon-label-box";
+      div.style.position = "absolute";
+      div.style.display = "none";
+      let close = document.createElement("button");
+      close.className = "close-btn";
+      close.innerHTML = "&times;";
+      close.onclick = function(e){
+        e.stopPropagation();
+        div.style.display="none";
+      };
+      let input = document.createElement("input");
+      input.type = "text";
+      input.value = name||"";
+      input.placeholder = "Nome da área";
+      input.onchange = function(){
+        overlays[idx].name = input.value;
+        saveAreas();
+      }
+      let delBtn = document.createElement("button");
+      delBtn.textContent = "Excluir";
+      delBtn.onclick = function(e){
+        overlays[idx].polygon.setMap(null);
+        div.remove();
+        overlays.splice(idx,1);
+        labelBoxes.splice(idx,1);
+        saveAreas();
+        updateLabelBoxes();
+      };
+      div.appendChild(close);
+      div.appendChild(input);
+      div.appendChild(delBtn);
+      if(parentIdx!==null && overlays[parentIdx]) {
+        let span = document.createElement("span");
+        span.className = "polygon-parent-info";
+        span.textContent = `Vinculada a: ${overlays[parentIdx].name||'(sem nome)'}`;
+        div.appendChild(span);
+      }
+      document.body.appendChild(div);
+      labelBoxes[idx]=div;
+      // Mostra ao clicar no polígono
+      polygon.addListener('click', function(e){
+        hideAllLabelBoxes();
+        let proj = map.getProjection();
+        let pos = e.latLng || bounds;
+        let point = map.getProjection().fromLatLngToPoint(pos);
+        let scale = Math.pow(2, map.getZoom());
+        let worldCoordinate = map.getProjection().fromLatLngToPoint(pos);
+        let mapDiv = map.getDiv();
+        // Fixa na tela próximo ao clique
+        div.style.left = (mapDiv.offsetLeft + (map.getDiv().offsetWidth/2) + ((pos.lng()-map.getCenter().lng())*scale*256/360)) + "px";
+        div.style.top = (mapDiv.offsetTop + (map.getDiv().offsetHeight/2) - ((pos.lat()-map.getCenter().lat())*scale*256/180)) + "px";
+        div.style.display = "flex";
+      });
+      // Esconde ao clicar fora
+      google.maps.event.addListener(map, 'click', function(){div.style.display="none"});
+    }
+    function hideAllLabelBoxes() {
+      labelBoxes.forEach(lb=>lb&&(lb.style.display="none"));
+    }
+    function updateLabelBoxes() {
+      labelBoxes.forEach((lb,i)=>{
+        if(lb){
+          lb.querySelector("input").onchange = function(){
+            overlays[i].name = lb.querySelector("input").value;
+            saveAreas();
           }
         }
       });
-      return parentName;
     }
-
-    function handlePolygonComplete(polygon, preName, color, preParent) {
-      let areaName = preName;
-      if (!areaName) {
-        areaName = prompt("Nome da Área:", "") || "Área " + (drawnAreas.length+1);
-      }
-      let areaColor = color || selectedColor;
-      // Verifica vínculo
-      let parentName = preParent;
-      if (!parentName) {
-        parentName = findParentArea(polygon);
-      }
-      // Dados do areaObj
-      let areaObj = {
-        polygon,
-        data: { name: areaName, color: areaColor, parent: parentName },
-        label: null,
-        btn: null
-      };
-
-      polygon.setOptions({ fillColor: areaColor, strokeColor: areaColor });
-
-      // Cria label e botão de exclusão
-      let label = createLabelForPolygon(polygon, areaObj.data);
-      areaObj.label = label;
-
-      // Exibe label ao clicar na área
-      google.maps.event.addListener(polygon, 'click', function(event){
-        closeAllLabels();
-        label.setPosition(getPolygonCenter(polygon));
-        label.open(map);
+    // Anexa eventos para drag/delete após load/criação
+    function attachPolygonEvents(polygon, idx) {
+      polygon.addListener("rightclick", function(e){
+        // Exibe label box como se fosse click
+        if(labelBoxes[idx]) labelBoxes[idx].style.display = "flex";
       });
-
-      // Atualiza label ao editar a área
-      google.maps.event.addListener(polygon.getPath(), 'set_at', function(){
-        let c = getPolygonCenter(polygon);
-        label.setPosition(c);
-        saveAreasToStorage();
-      });
-      google.maps.event.addListener(polygon.getPath(), 'insert_at', function(){
-        let c = getPolygonCenter(polygon);
-        label.setPosition(c);
-        saveAreasToStorage();
-      });
-      google.maps.event.addListener(polygon, 'dragend', function(){
-        label.setPosition(getPolygonCenter(polygon));
-        saveAreasToStorage();
-      });
-
-      // Atualiza cor se editar
-      google.maps.event.addListener(polygon, 'rightclick', function(event){
-        // Futuro: popup menu para cor/nome?
-      });
-
-      // Persistência ao deletar
-      google.maps.event.addListener(polygon, 'map_changed', function(){
-        if(!polygon.getMap()){
-          drawnAreas = drawnAreas.filter(a => a.polygon !== polygon);
-          saveAreasToStorage();
-        }
-      });
-
-      drawnAreas.push(areaObj);
-      saveAreasToStorage();
+      polygon.addListener('dragend', saveAreas);
+      polygon.addListener('mouseup', saveAreas);
+      polygon.addListener('path_changed', saveAreas);
     }
-
-    function clearAllAreas() {
-      drawnAreas.forEach(({polygon,label}) => {
-        if(label) label.close();
-        polygon.setMap(null);
-      });
-      drawnAreas = [];
-      saveAreasToStorage();
-    }
-
+    // Google Maps callback
     function initMap() {
+      // Sidebar/controles
       map = new google.maps.Map(document.getElementById('map'), {
-        center: {lat: -22.5162, lng: -44.0948}, zoom: 15, mapTypeId: 'roadmap',
-        streetViewControl: true, fullscreenControl: true,
+        center: {lat: -22.5162, lng: -44.0948},
+        zoom: 15,
+        mapTypeId: 'roadmap',
+        streetViewControl: true,
+        fullscreenControl: true,
       });
-
+      // Relief (terrain) overlay
+      reliefLayer = new google.maps.TerrainLayer();
+      document.getElementById('reliefToggle').onchange = function() {
+        if(this.checked) reliefLayer.setMap(map);
+        else reliefLayer.setMap(null);
+      }
+      // Color picker
+      document.getElementById('colorPicker').onchange = function() {
+        colorSelected = this.value;
+      };
+      // Drawing Manager
       drawingManager = new google.maps.drawing.DrawingManager({
-        drawingMode: null, drawingControl: false,
+        drawingMode: null,
+        drawingControl: false,
         polygonOptions: {
-          editable: true, draggable: true, strokeColor: selectedColor, fillColor: selectedColor,
-          fillOpacity: 0.18, strokeWeight: 2,
+          editable: true,
+          draggable: true,
+          strokeColor: colorSelected,
+          fillColor: colorSelected,
+          fillOpacity: 0.16,
+          strokeWeight: 2,
         }
       });
       drawingManager.setMap(map);
 
-      // Trocar cor ao clicar nas opções
-      document.querySelectorAll('.color-circle, #customColor').forEach(el => {
-        el.addEventListener('click', function(){
-          setPolygonColor(selectedColor);
-        });
-        el.addEventListener('input', function(){
-          setPolygonColor(selectedColor);
-        });
-      });
-
-      // Ao desenhar uma nova área
-      google.maps.event.addListener(drawingManager, 'polygoncomplete', function(polygon) {
-        polygon.setOptions({ fillColor: selectedColor, strokeColor: selectedColor });
-        handlePolygonComplete(polygon);
-        drawingManager.setDrawingMode(null);
-        document.getElementById('drawAreaBtn').classList.remove('active');
-      });
-
       document.getElementById('drawAreaBtn').onclick = function() {
-        setPolygonColor(selectedColor);
         drawingManager.setDrawingMode('polygon');
-        this.classList.add('active');
+        drawingManager.setOptions({
+          polygonOptions: {
+            editable: true,
+            draggable: true,
+            strokeColor: colorSelected,
+            fillColor: colorSelected,
+            fillOpacity: 0.16,
+            strokeWeight: 2,
+          }
+        });
       };
-      document.getElementById('clearBtn').onclick = function() { clearAllAreas(); };
+      document.getElementById('clearBtn').onclick = function() {
+        overlays.forEach(o=>o.polygon.setMap(null));
+        overlays=[];
+        labelBoxes.forEach(lb=>lb&&lb.remove());
+        labelBoxes=[];
+        saveAreas();
+      };
       document.getElementById('mapBtn').onclick = function() {
         map.setMapTypeId('roadmap');
         this.classList.add('active');
@@ -365,29 +416,26 @@
         document.getElementById('mapBtn').classList.remove('active');
       };
 
-      // Carrega áreas salvas só uma vez
-      if(!loadedAreas){
-        loadedAreas = true;
-        // Precisa da lib geometry para containsLocation!
-        google.maps.event.addListenerOnce(map, 'idle', function(){
-          if(google.maps.geometry) loadAreasFromStorage();
-          else {
-            // Recarrega a página com lib geometry
-            if(!window._geoLoaded){
-              window._geoLoaded = true;
-              let scr = document.createElement('script');
-              scr.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing,geometry&callback=initMap";
-              document.body.appendChild(scr);
-            }
-          }
-        });
-      }
+      google.maps.event.addListener(drawingManager, 'polygoncomplete', function(polygon) {
+        // Ao criar, solicita nome e encontra polígono pai (se houver)
+        let latlngs = polygon.getPath().getArray();
+        let parentIdx = getParentPolygonIdx(latlngs);
+        overlays.push({polygon, name: "", color: colorSelected, parent: parentIdx});
+        attachPolygonEvents(polygon, overlays.length-1);
+        addPolygonLabelBox(polygon, "", colorSelected, overlays.length-1, parentIdx);
+        saveAreas();
+        drawingManager.setDrawingMode(null);
+      });
+      // Ao clicar fora do polígono, fecha balão
+      map.addListener('click', hideAllLabelBoxes);
+      // Load persistidos
+      loadAreas();
     }
   </script>
-  <!-- Troque YOUR_GOOGLE_MAPS_API_KEY por sua key -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing,geometry&callback=initMap" async defer></script>
+  <!-- Google Maps API + Drawing Library -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing&callback=initMap" async defer></script>
   <script>
-    // Sidebar responsivo
+    // Sidebar
     const menuToggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');
     menuToggle.addEventListener('click', function () {
@@ -395,7 +443,7 @@
     });
     document.addEventListener('click', function (e) {
       if (
-        window.innerWidth <= 900 &&
+        window.innerWidth <= 768 &&
         sidebar.classList.contains('active') &&
         !sidebar.contains(e.target) &&
         !menuToggle.contains(e.target)
@@ -421,7 +469,8 @@
       <a href="#">Política de Privacidade</a>
       <a href="#">Termos de Uso</a>
     </nav>
-    <span class="versao">Versão <b>V1.0.0</b></span>
+      <span class="versao">Versão <b>V1.0.0</b></span>
+    </div>
   </div>
 </footer>
 </html>

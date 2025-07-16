@@ -23,8 +23,8 @@
     }
     .custom-controls {
       position: fixed;
-      top: 10px;
-      left: 220px; /* Deixe espaço pra sidebar */
+      top: 56px;
+      left: 220px;
       z-index: 10;
       display: flex;
       gap: 12px;
@@ -43,6 +43,32 @@
     .custom-controls button.active,
     .custom-controls button:hover {
       background: #e8e8e8;
+    }
+    .color-picker-bar {
+      position: fixed;
+      left: 220px;
+      top: 10px;
+      z-index: 15;
+      display: flex;
+      gap: 8px;
+      padding: 6px 10px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px #0002;
+      align-items: center;
+      border: 1px solid #e6e6e6;
+    }
+    .color-circle {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid #8882;
+      cursor: pointer;
+      box-sizing: border-box;
+      transition: border .18s;
+    }
+    .color-circle.selected {
+      border: 3px solid #0bc77e;
     }
     .timer-bar {
       position: fixed;
@@ -105,18 +131,43 @@
       flex: 1;
       padding: 0;
     }
-    /* Footer fixo no fundo */
+    /* Lixeira botão na área */
+    .delete-area-btn {
+      position: absolute;
+      background: #fff;
+      border: none;
+      color: #c00;
+      font-size: 22px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #0003;
+      z-index: 9999;
+      transition: background .15s;
+    }
+    .delete-area-btn:hover {
+      background: #fee;
+    }
+    .area-label {
+      background: #fff;
+      color: #222;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 13px;
+      padding: 4px 12px;
+      border: 1.5px solid #4bffb7;
+      box-shadow: 0 2px 8px #0002;
+      margin-top: 8px;
+      pointer-events: none;
+      white-space: pre-line;
+    }
     .footer {
-      position: fixed;
-      left: 0;
-      bottom: 0;
-      width: 100vw;
+      position: fixed; left: 0; bottom: 0; width: 100vw;
       z-index: 99;
       background: rgba(10,16,30,0.94);
       box-shadow: 0 -4px 24px #0003;
       color: #fff;
     }
-    /* Botões menu sanduíche e darkmode sempre visíveis */
     #toggle-mode,
     .menu-toggle {
       position: fixed;
@@ -134,16 +185,14 @@
     }
     #toggle-mode { right: 20px;}
     .menu-toggle { left: 20px;}
-    /* Esconde menu sanduíche em desktop */
     @media (min-width: 900px) {
       .menu-toggle { display: none;}
     }
     @media (max-width: 900px) {
       .sidebar { width: 85vw; min-width: 0;}
       .main-content { margin-left: 0; }
-      .custom-controls, .timer-bar { left: 90vw !important; }
+      .custom-controls, .timer-bar, .color-picker-bar { left: 90vw !important; }
     }
-    /* Oculta scrollbar do mapa */
     body::-webkit-scrollbar { display: none; }
   </style>
 </head>
@@ -170,12 +219,19 @@
         <li><a href="sobressalentes.html">Sobressalentes</a></li>
       </ul>
     </aside>
-    <main class="main-content">
-      <!-- Se quiser, coloque conteúdo aqui acima do mapa -->
-    </main>
+    <main class="main-content"></main>
   </div>
 
-  <!-- CONTROLES DO MAPA E MAPA GOOGLE -->
+  <div class="color-picker-bar" id="colorPickerBar">
+    <span style="font-weight:600;font-size:15px">Cor da área:</span>
+    <div class="color-circle selected" style="background:#2196f3" data-color="#2196f3"></div>
+    <div class="color-circle" style="background:#43a047" data-color="#43a047"></div>
+    <div class="color-circle" style="background:#fbc02d" data-color="#fbc02d"></div>
+    <div class="color-circle" style="background:#c62828" data-color="#c62828"></div>
+    <div class="color-circle" style="background:#9c27b0" data-color="#9c27b0"></div>
+    <div class="color-circle" style="background:#ff9800" data-color="#ff9800"></div>
+    <input type="color" id="customColor" style="margin-left:10px;width:30px;height:28px;border:none;outline:none;cursor:pointer;background:#fff;" title="Mais cores" value="#2196f3"/>
+  </div>
   <div class="timer-bar" id="timerBar">Próxima atualização em: <span id="timerValue">01:00</span></div>
   <div class="custom-controls">
     <button id="mapBtn" class="active">Mapa</button>
@@ -201,7 +257,224 @@
     updateTimer();
   </script>
   <script>
+    // Cores para desenhar áreas
+    let selectedColor = "#2196f3";
+    const colorCircles = document.querySelectorAll('.color-circle');
+    colorCircles.forEach(c => {
+      c.onclick = function() {
+        colorCircles.forEach(el=>el.classList.remove('selected'));
+        this.classList.add('selected');
+        selectedColor = this.dataset.color;
+        document.getElementById('customColor').value = rgb2hex(selectedColor);
+      }
+    });
+    document.getElementById('customColor').oninput = function() {
+      selectedColor = this.value;
+      colorCircles.forEach(el=>el.classList.remove('selected'));
+      // Marca o círculo custom como "selected" (adiciona visual ao color picker)
+      this.style.border = "2px solid #0bc77e";
+    };
+    function rgb2hex(color) {
+      if(color[0]==="#") return color;
+      // de rgb(33,150,243) para #2196f3
+      let m = color.match(/rgb\((\d+),(\d+),(\d+)\)/);
+      if(!m) return color;
+      return "#" + ((1<<24) + (+m[1]<<16) + (+m[2]<<8) + (+m[3])).toString(16).slice(1);
+    }
+  </script>
+  <script>
     let map, drawingManager, drawnAreas = [];
+
+    // Função de ponto dentro de polígono (Ray-casting algorithm)
+    function pointInPolygon(point, vs) {
+      let x = point.lng, y = point.lat;
+      let inside = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        let xi = vs[i].lng, yi = vs[i].lat;
+        let xj = vs[j].lng, yj = vs[j].lat;
+        let intersect = ((yi > y) !== (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / (yj - yi + 0.000001) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    // Função de polígono dentro de polígono (todos os pontos do menor dentro do maior)
+    function polygonInsidePolygon(small, large) {
+      return small.every(pt => pointInPolygon(pt, large));
+    }
+
+    function createDeleteBtn(polygon, map, areaData) {
+      // Coloca lixeira no "primeiro" vértice (aproximado ao centro)
+      const bounds = new google.maps.LatLngBounds();
+      polygon.getPath().forEach(p => bounds.extend(p));
+      const center = bounds.getCenter();
+      const btn = document.createElement('button');
+      btn.innerHTML = '🗑';
+      btn.className = 'delete-area-btn';
+      btn.title = "Excluir área";
+      btn.style.left = '0px';
+      btn.style.top = '0px';
+      btn.onclick = function(e) {
+        polygon.setMap(null);
+        btn.remove();
+        if(areaData.label) areaData.label.setMap(null);
+        drawnAreas = drawnAreas.filter(d => d.polygon !== polygon);
+      };
+      document.body.appendChild(btn);
+
+      // Função para posicionar a lixeira
+      function updateBtnPos() {
+        const projection = map.getProjection();
+        if(!projection) return;
+        const point = map.getProjection().fromLatLngToPoint(center);
+        const pos = map.getProjection().fromLatLngToContainerPixel(center);
+        let p = map.getProjection().fromLatLngToDivPixel(center) || pos || {x:0,y:0};
+        let scale = Math.pow(2, map.getZoom());
+        // Projeta para pixel relativo à tela
+        const proj = map.getProjection();
+        const bounds = map.getBounds();
+        if(!bounds) return;
+        const ne = bounds.getNorthEast();
+        const sw = bounds.getSouthWest();
+        const worldPoint = proj.fromLatLngToPoint(center);
+        const topRight = proj.fromLatLngToPoint(ne);
+        const bottomLeft = proj.fromLatLngToPoint(sw);
+        const x = (worldPoint.x - bottomLeft.x) * scale;
+        const y = (worldPoint.y - topRight.y) * scale;
+        btn.style.left = (x + 220 - 16) + 'px'; // 220 = sidebar
+        btn.style.top = (y + 66 - 28) + 'px';   // 66 = topo + color bar
+      }
+      google.maps.event.addListener(map, 'bounds_changed', updateBtnPos);
+      google.maps.event.addListener(map, 'zoom_changed', updateBtnPos);
+      updateBtnPos();
+      return btn;
+    }
+
+    function createAreaLabel(map, center, name, parentName) {
+      return new google.maps.InfoWindow({
+        content: `<div class="area-label">${name}${parentName?'<br><span style="font-size:11px;font-weight:400;color:#777">Filha de: '+parentName+'</span>':''}</div>`,
+        position: center,
+        pixelOffset: new google.maps.Size(0, -18),
+      });
+    }
+
+    function getPolygonPathLatLngArr(polygon) {
+      return polygon.getPath().getArray().map(latlng => ({lat: latlng.lat(), lng: latlng.lng()}));
+    }
+
+    function findParentArea(coords) {
+      // Procura polígono que contenha todos os pontos deste
+      for(let area of drawnAreas) {
+        const parentCoords = getPolygonPathLatLngArr(area.polygon);
+        if(polygonInsidePolygon(coords, parentCoords)) return area;
+      }
+      return null;
+    }
+
+    function getPolygonCenter(polygon) {
+      const path = polygon.getPath().getArray();
+      let lat=0, lng=0;
+      for(let p of path) { lat += p.lat(); lng += p.lng(); }
+      return {lat:lat/path.length, lng:lng/path.length};
+    }
+
+    function openLabel(area) {
+      if(area.label) area.label.open(map);
+    }
+
+    function closeLabel(area) {
+      if(area.label) area.label.close();
+    }
+
+    function closeAllLabels() {
+      drawnAreas.forEach(a => closeLabel(a));
+    }
+
+    function saveArea(area) {
+      // Aqui você pode integrar com backend ou localStorage
+    }
+
+    function promptForAreaName() {
+      let name = prompt("Digite o nome para a nova área:");
+      if (!name) name = "Área sem nome";
+      return name;
+    }
+
+    function handlePolygonComplete(polygon) {
+      let color = polygon.fillColor || selectedColor;
+      let coords = getPolygonPathLatLngArr(polygon);
+      let name = promptForAreaName();
+      let parentArea = findParentArea(coords);
+
+      // Verifica se polígono está dentro de algum outro (parent)
+      let parentName = '';
+      if(parentArea) {
+        if(confirm(`Esta área está dentro da área "${parentArea.name}". Deseja vincular como filha?`)) {
+          parentName = parentArea.name;
+        }
+      }
+
+      // Cria label
+      let center = getPolygonCenter(polygon);
+      let label = createAreaLabel(map, center, name, parentName);
+      label.open(map);
+
+      // Botão de excluir
+      let btn = createDeleteBtn(polygon, map, {label});
+
+      // Salva área na lista
+      let areaObj = {polygon, name, color, parentName, label, btn};
+      drawnAreas.push(areaObj);
+
+      // Evento ao clicar na área, mostra label
+      google.maps.event.addListener(polygon, 'click', function(event){
+        closeAllLabels();
+        label.open(map);
+      });
+
+      // Atualiza label ao editar a área
+      google.maps.event.addListener(polygon.getPath(), 'set_at', function(){
+        let c = getPolygonCenter(polygon);
+        label.setPosition(c);
+      });
+      google.maps.event.addListener(polygon.getPath(), 'insert_at', function(){
+        let c = getPolygonCenter(polygon);
+        label.setPosition(c);
+      });
+
+      // Evento ao mover área, atualiza botão
+      google.maps.event.addListener(polygon, 'dragend', function(){
+        btn && btn.remove();
+        btn = createDeleteBtn(polygon, map, {label});
+      });
+
+      saveArea(areaObj);
+    }
+
+    function setPolygonColor(color) {
+      if(drawingManager)
+        drawingManager.setOptions({
+          polygonOptions: {
+            editable: true,
+            draggable: true,
+            strokeColor: color,
+            fillColor: color,
+            fillOpacity: 0.18,
+            strokeWeight: 2,
+          }
+        });
+    }
+
+    function clearAllAreas() {
+      drawnAreas.forEach(({polygon, label, btn}) => {
+        if(label) label.close();
+        polygon.setMap(null);
+        btn && btn.remove();
+      });
+      drawnAreas = [];
+    }
+
     function initMap() {
       map = new google.maps.Map(document.getElementById('map'), {
         center: {lat: -22.5162, lng: -44.0948},
@@ -217,8 +490,8 @@
         polygonOptions: {
           editable: true,
           draggable: true,
-          strokeColor: "#2196f3",
-          fillColor: "#2196f3",
+          strokeColor: selectedColor,
+          fillColor: selectedColor,
           fillOpacity: 0.18,
           strokeWeight: 2,
         }
@@ -226,22 +499,35 @@
 
       drawingManager.setMap(map);
 
-      // Drawing Complete
-      google.maps.event.addListener(drawingManager, 'polygoncomplete', function(polygon) {
-        drawnAreas.push(polygon);
-        polygon.addListener('rightclick', function() {
-          polygon.setMap(null);
-          drawnAreas = drawnAreas.filter(p => p !== polygon);
+      // Alterar cor antes de desenhar
+      document.querySelectorAll('.color-circle, #customColor').forEach(el => {
+        el.addEventListener('click', function(){
+          setPolygonColor(selectedColor);
+        });
+        el.addEventListener('input', function(){
+          setPolygonColor(selectedColor);
         });
       });
 
+      // Ao desenhar
+      google.maps.event.addListener(drawingManager, 'polygoncomplete', function(polygon) {
+        // Aplica cor da seleção
+        polygon.setOptions({
+          fillColor: selectedColor,
+          strokeColor: selectedColor
+        });
+        handlePolygonComplete(polygon);
+        drawingManager.setDrawingMode(null);
+        document.getElementById('drawAreaBtn').classList.remove('active');
+      });
+
       document.getElementById('drawAreaBtn').onclick = function() {
+        setPolygonColor(selectedColor);
         drawingManager.setDrawingMode('polygon');
         this.classList.add('active');
       };
       document.getElementById('clearBtn').onclick = function() {
-        drawnAreas.forEach(area => area.setMap(null));
-        drawnAreas = [];
+        clearAllAreas();
       };
       document.getElementById('mapBtn').onclick = function() {
         map.setMapTypeId('roadmap');
@@ -255,10 +541,9 @@
       };
     }
   </script>
-  <!-- ATENÇÃO: Substitua 'YOUR_GOOGLE_MAPS_API_KEY' pela sua chave real -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing&callback=initMap" async defer></script>
+  <!-- Troque por sua key: -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=drawing&callback=initMap" async defer></script>
   <script>
-    // Sidebar responsivo
     const menuToggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');
     menuToggle.addEventListener('click', function () {
@@ -277,7 +562,6 @@
   </script>
   <script src="darkmode.js"></script>
 </body>
-
 <footer class="footer">
   <div class="footer-content" style="display: flex; justify-content: space-between; align-items: center;">
     <div class="footer-logo-group">

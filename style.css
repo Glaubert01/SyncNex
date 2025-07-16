@@ -1569,5 +1569,10 @@ body.dark-mode .sidebar a, body.dark-mode .sidebar li { color: #ffe144 !importan
   z-index: 1;
 }
 
+#map {
+  position: relative;
+  flex: 1 1 0;
+  height: 100vh;
+}
 
 

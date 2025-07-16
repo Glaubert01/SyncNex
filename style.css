@@ -380,7 +380,7 @@ body.dark-mode .sidebar li:hover {
     position: fixed;
     left: 16px;
     top: 16px;
-    z-index: 1100;
+    z-index: 2100;
     background: #003b71;
     color: #fff;
     border: none;
@@ -902,7 +902,7 @@ body {
 .menu-toggle,
 .darkmode-btn {
   position: relative;
-  z-index: 1;
+  z-index: 2100;
 }
 
 /* Sidebar sempre grudada no topo, inclusive desktop */
@@ -930,7 +930,7 @@ body {
   position: fixed;
   top: 20px;
   right: 24px;
-  z-index: 2000 !important; /* Garante acima do menu e fundo */
+  z-index: 2100 !important; /* Garante acima do menu e fundo */
 }
 
 /* Responsivo para sidebar fixa no mobile */

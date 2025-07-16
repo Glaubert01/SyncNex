@@ -304,7 +304,7 @@ td.activity.hidden {
 /* Modo escuro */
 body.dark-mode {
   background: #121212;
-  color: #f1f1f1;
+  color: #e4e8f3;
 }
 body.dark-mode .controls button {
   background-color: #2c2c2c;

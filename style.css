@@ -1557,3 +1557,8 @@ menu.dark-mode {
 sidebar.dark-mode {
   color:#ffe144;
 }
+
+body.dark-mode .sidebar a, body.dark-mode .sidebar li { color: #ffe144 !important; }
+
+
+

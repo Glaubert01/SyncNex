@@ -150,23 +150,15 @@
     </div>
   </div>
 
-  <script>
-    // Timer countdown
-    let seconds = 60;
-    function updateTimer() {
-      document.getElementById('timerValue').textContent = seconds < 10 ? `00:0${seconds}` : `00:${seconds}`;
-      if (seconds > 0) { seconds--; setTimeout(updateTimer, 1000);}
-      else { seconds = 60; setTimeout(updateTimer, 1000);}
-    }
-    updateTimer();
-  </script>
-  <script>
+<!-- ...todo seu código HTML acima permanece igual... -->
+<script>
     let map, drawingManager;
     let drawnAreas = []; // {polygon, label, data, btn}
     let selectedColor = "#2196f3";
     let loadedAreas = false;
     let solicitacoes = [];
     let solicMarkers = [];
+    let rotaLines = []; // ← para desenhar e controlar as rotas animadas
 
     // ---- PERSISTÊNCIA GEOAREAS ----
     function saveAreasToStorage() {
@@ -211,6 +203,10 @@
       // Remove markers antigos
       solicMarkers.forEach(m=>m.setMap(null));
       solicMarkers = [];
+      // Remove linhas animadas antigas
+      rotaLines.forEach(l=>l.setMap(null));
+      rotaLines = [];
+
       if (!map || !drawnAreas.length) return;
       solicitacoes.forEach((solic, idx) => {
         // Pega centro da geoarea de destino
@@ -232,6 +228,7 @@
           solicMarkers.push(marker);
         }
       });
+      desenharRotaAnimadaEntreFilhas();
     }
 
     // ---- COR SELECIONADA ----
@@ -467,12 +464,68 @@
             if(!window._geoLoaded){
               window._geoLoaded = true;
               let scr = document.createElement('script');
-              scr.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing,geometry&callback=initMap";
+              scr.src = "https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=drawing,geometry&callback=initMap";
               document.body.appendChild(scr);
             }
           }
         });
       }
+    }
+
+    // --- NOVA FUNÇÃO: desenha rota sugerida animada ---
+    function desenharRotaAnimadaEntreFilhas() {
+      // 1. Para cada geo área MÃE (parent), encontre todas as áreas filhas vinculadas
+      let geoMothers = {};
+      drawnAreas.forEach(area=>{
+        if (area.data.parent) {
+          geoMothers[area.data.parent] = geoMothers[area.data.parent] || [];
+          geoMothers[area.data.parent].push(area);
+        }
+      });
+      // 2. Para cada grupo de filhas com solicitações de destino, desenhe linha animada ligando os centros das filhas, da mais à direita até à mais à esquerda
+      Object.values(geoMothers).forEach(filhas => {
+        // Pegue apenas áreas com solicitação de destino
+        let destinoNomes = solicitacoes.map(s=>s.destino);
+        let filhasComSolic = filhas.filter(f=>destinoNomes.includes(f.data.name));
+        if (filhasComSolic.length < 2) return; // Só faz se houver pelo menos 2 destinos
+
+        // Ordena da mais à direita (maior lng) para à mais à esquerda (menor lng)
+        let pts = filhasComSolic.map(f=>({area:f, center:getPolygonCenter(f.polygon)}));
+        pts.sort((a,b)=>b.center.lng()-a.center.lng());
+
+        let path = pts.map(p=>p.center);
+        animarLinhaGoogleMaps(path);
+      });
+    }
+
+    // --- ANIMAÇÃO de linha Google Maps Polyline ---
+    function animarLinhaGoogleMaps(path) {
+      // Cria Polyline "vazia"
+      let poly = new google.maps.Polyline({
+        path: [path[0]],
+        map,
+        strokeColor: "#004fff",
+        strokeOpacity: 0.88,
+        strokeWeight: 4,
+        zIndex: 150,
+        icons: [{
+          icon: { path: google.maps.SymbolPath.FORWARD_OPEN_ARROW, strokeOpacity:1, scale:2 },
+          offset: "100%"
+        }]
+      });
+      rotaLines.push(poly);
+
+      // Anima gradualmente
+      let i = 1;
+      function step() {
+        if(i <= path.length) {
+          let pts = path.slice(0, i+1);
+          poly.setPath(pts);
+          i++;
+          setTimeout(step, 200); // velocidade da animação
+        }
+      }
+      step();
     }
 
     // --- Solicitação modal handlers ---
@@ -536,27 +589,9 @@
       });
     });
 
-  </script>
-  <!-- Troque YOUR_GOOGLE_MAPS_API_KEY por sua key -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing,geometry&callback=initMap" async defer></script>
-  <script>
-    // Sidebar responsivo
-    const menuToggle = document.getElementById('menu-toggle');
-    const sidebar = document.getElementById('sidebar');
-    menuToggle.addEventListener('click', function () {
-      sidebar.classList.toggle('active');
-    });
-    document.addEventListener('click', function (e) {
-      if (
-        window.innerWidth <= 900 &&
-        sidebar.classList.contains('active') &&
-        !sidebar.contains(e.target) &&
-        !menuToggle.contains(e.target)
-      ) {
-        sidebar.classList.remove('active');
-      }
-    });
-  </script>
+</script>
+<!-- ...restante do seu código permanece igual... -->
+
   <script src="darkmode.js"></script>
 </body>
 <footer class="footer">

@@ -1560,9 +1560,5 @@ sidebar.dark-mode {
 
 body.dark-mode .sidebar a, body.dark-mode .sidebar li { color: #ffe144 !important; }
 
-.container { display: flex; height: 100vh; }
-.sidebar { width: 240px; background: #111; color: #fff; }
-#map { flex: 1; height: 100vh; }
-
 
 

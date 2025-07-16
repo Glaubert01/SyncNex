@@ -51,7 +51,25 @@
     }
     .footer { position: fixed; left: 0; bottom: 0; width: 100vw; z-index: 99;
       background: rgba(10,16,30,0.94); box-shadow: 0 -4px 24px #0003; color: #fff; }
-    .sidebar { z-index: 20; display: block !important; } /* <--- ADICIONADO */
+    .sidebar { z-index: 20; display: block !important; }
+    /* Modal estilos */
+    .modal-bg {
+      display:none; position:fixed; z-index:1001; left:0;top:0;width:100vw;height:100vh;
+      background:rgba(0,0,0,0.24); align-items:center; justify-content:center;
+    }
+    .modal {
+      background: #fff; border-radius: 10px; padding: 24px 20px 20px 20px; min-width:320px; box-shadow: 0 8px 40px #0005; position:relative;
+    }
+    .modal h3 { margin-top:0; }
+    .modal-close { position:absolute; top:12px; right:18px; font-size:20px; background:none; border:none; color:#b21c1c; cursor:pointer;}
+    .modal label {display:block; margin: 10px 0 4px 0; font-weight:500;}
+    .modal select { width:90%; font-size:1rem; padding:4px;}
+    .solic-table {width:100%; margin-top:16px; border-collapse:collapse;}
+    .solic-table th, .solic-table td { border:1px solid #e1e1e1; padding:6px 8px;}
+    .solic-table th {background:#f3f5fa;}
+    .marker-pin {
+      filter: drop-shadow(0 1px 6px #3338);
+    }
   </style>
 </head>
 <body>
@@ -91,8 +109,46 @@
     </div>
     <button id="drawAreaBtn">Desenhar Área</button>
     <button id="clearBtn">Limpar Áreas</button>
+    <button id="incluirSolicBtn" style="background:#2969b0; color:#fff;">Incluir Solicitação</button>
+    <button id="excluirSolicBtn" style="background:#c32c2c; color:#fff;">Excluir Solicitação</button>
   </div>
   <div id="map"></div>
+
+  <!-- Modal de Incluir Solicitação -->
+  <div class="modal-bg" id="modalSolic">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModalSolic()">&times;</button>
+      <h3>Nova Solicitação</h3>
+      <form id="solicForm" autocomplete="off">
+        <label>Origem</label>
+        <select id="origemSolic" required><option value="">Selecione...</option></select>
+        <label>Destino</label>
+        <select id="destinoSolic" required><option value="">Selecione...</option></select>
+        <div style="margin-top:15px;">
+          <button type="submit" style="background:#2196f3;color:#fff;border:none;padding:8px 18px;border-radius:5px;font-weight:bold;cursor:pointer;">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Excluir Solicitação -->
+  <div class="modal-bg" id="modalExcluirSolic">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModalExcluirSolic()">&times;</button>
+      <h3>Solicitações Cadastradas</h3>
+      <table class="solic-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Origem</th>
+            <th>Destino</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="solicListBody"></tbody>
+      </table>
+    </div>
+  </div>
 
   <script>
     // Timer countdown
@@ -109,8 +165,10 @@
     let drawnAreas = []; // {polygon, label, data, btn}
     let selectedColor = "#2196f3";
     let loadedAreas = false;
+    let solicitacoes = [];
+    let solicMarkers = [];
 
-    // ---- PERSISTÊNCIA ----
+    // ---- PERSISTÊNCIA GEOAREAS ----
     function saveAreasToStorage() {
       const areasData = drawnAreas.map(area => ({
         path: area.polygon.getPath().getArray().map(ll => ({lat: ll.lat(), lng: ll.lng()})),
@@ -139,6 +197,41 @@
           handlePolygonComplete(polygon, areaObj.name, areaObj.color, areaObj.parent);
         });
       } catch(e) { console.warn('Erro carregando áreas salvas', e); }
+    }
+
+    // ---- SOLICITAÇÕES - persistência e marker ----
+    function saveSolicitacoes() {
+      localStorage.setItem("solicitacoes", JSON.stringify(solicitacoes));
+    }
+    function loadSolicitacoes() {
+      const saved = localStorage.getItem("solicitacoes");
+      solicitacoes = saved ? JSON.parse(saved) : [];
+    }
+    function atualizarPinsSolic() {
+      // Remove markers antigos
+      solicMarkers.forEach(m=>m.setMap(null));
+      solicMarkers = [];
+      if (!map || !drawnAreas.length) return;
+      solicitacoes.forEach((solic, idx) => {
+        // Pega centro da geoarea de destino
+        let destinoArea = drawnAreas.find(a=>a.data.name===solic.destino);
+        if(destinoArea) {
+          let center = getPolygonCenter(destinoArea.polygon);
+          let marker = new google.maps.Marker({
+            position: center,
+            map,
+            icon: {
+              url: "https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2_hdpi.png",
+              scaledSize: new google.maps.Size(32,40),
+              anchor: new google.maps.Point(16,40)
+            },
+            title: "Solicitação: " + solic.origem + " → " + solic.destino,
+            zIndex: 120,
+            optimized: false
+          });
+          solicMarkers.push(marker);
+        }
+      });
     }
 
     // ---- COR SELECIONADA ----
@@ -200,6 +293,7 @@
         polygon.setMap(null);
         drawnAreas = drawnAreas.filter(a => a.polygon !== polygon);
         saveAreasToStorage();
+        setTimeout(atualizarPinsSolic,100);
       };
       content.appendChild(deleteBtn);
 
@@ -229,7 +323,6 @@
       let parentName = null;
       drawnAreas.forEach(area => {
         if (area.polygon !== polygon) {
-          // Contém todos pontos do child dentro do parent?
           let parentPoly = area.polygon;
           if(childPath.every(ll => google.maps.geometry.poly.containsLocation(ll, parentPoly))) {
             parentName = area.data.name;
@@ -276,20 +369,18 @@
         let c = getPolygonCenter(polygon);
         label.setPosition(c);
         saveAreasToStorage();
+        atualizarPinsSolic();
       });
       google.maps.event.addListener(polygon.getPath(), 'insert_at', function(){
         let c = getPolygonCenter(polygon);
         label.setPosition(c);
         saveAreasToStorage();
+        atualizarPinsSolic();
       });
       google.maps.event.addListener(polygon, 'dragend', function(){
         label.setPosition(getPolygonCenter(polygon));
         saveAreasToStorage();
-      });
-
-      // Atualiza cor se editar
-      google.maps.event.addListener(polygon, 'rightclick', function(event){
-        // Futuro: popup menu para cor/nome?
+        atualizarPinsSolic();
       });
 
       // Persistência ao deletar
@@ -297,11 +388,13 @@
         if(!polygon.getMap()){
           drawnAreas = drawnAreas.filter(a => a.polygon !== polygon);
           saveAreasToStorage();
+          setTimeout(atualizarPinsSolic,100);
         }
       });
 
       drawnAreas.push(areaObj);
       saveAreasToStorage();
+      atualizarPinsSolic();
     }
 
     function clearAllAreas() {
@@ -311,6 +404,7 @@
       });
       drawnAreas = [];
       saveAreasToStorage();
+      atualizarPinsSolic();
     }
 
     function initMap() {
@@ -328,7 +422,6 @@
       });
       drawingManager.setMap(map);
 
-      // Trocar cor ao clicar nas opções
       document.querySelectorAll('.color-circle, #customColor').forEach(el => {
         el.addEventListener('click', function(){
           setPolygonColor(selectedColor);
@@ -338,7 +431,6 @@
         });
       });
 
-      // Ao desenhar uma nova área
       google.maps.event.addListener(drawingManager, 'polygoncomplete', function(polygon) {
         polygon.setOptions({ fillColor: selectedColor, strokeColor: selectedColor });
         handlePolygonComplete(polygon);
@@ -363,27 +455,90 @@
         document.getElementById('mapBtn').classList.remove('active');
       };
 
-      // Carrega áreas salvas só uma vez
       if(!loadedAreas){
         loadedAreas = true;
-        // Precisa da lib geometry para containsLocation!
         google.maps.event.addListenerOnce(map, 'idle', function(){
-          if(google.maps.geometry) loadAreasFromStorage();
+          if(google.maps.geometry) {
+            loadAreasFromStorage();
+            loadSolicitacoes();
+            atualizarPinsSolic();
+          }
           else {
-            // Recarrega a página com lib geometry
             if(!window._geoLoaded){
               window._geoLoaded = true;
               let scr = document.createElement('script');
-              scr.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing,geometry&callback=initMap";
+              scr.src = "https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=drawing,geometry&callback=initMap";
               document.body.appendChild(scr);
             }
           }
         });
       }
     }
+
+    // --- Solicitação modal handlers ---
+    function openModalSolic() {
+      let geoareas = drawnAreas.map(a=>a.data.name).sort();
+      let origem = document.getElementById('origemSolic');
+      let destino = document.getElementById('destinoSolic');
+      origem.innerHTML = '<option value="">Selecione...</option>' + geoareas.map(g=>`<option>${g}</option>`).join('');
+      destino.innerHTML = '<option value="">Selecione...</option>' + geoareas.map(g=>`<option>${g}</option>`).join('');
+      document.getElementById('modalSolic').style.display = "flex";
+    }
+    function closeModalSolic() { document.getElementById('modalSolic').style.display = "none"; }
+    function openModalExcluirSolic() {
+      atualizarGridSolicitacoes();
+      document.getElementById('modalExcluirSolic').style.display = "flex";
+    }
+    function closeModalExcluirSolic() { document.getElementById('modalExcluirSolic').style.display = "none"; }
+
+    document.getElementById('incluirSolicBtn').onclick = openModalSolic;
+    document.getElementById('excluirSolicBtn').onclick = openModalExcluirSolic;
+
+    // Form submissão
+    document.getElementById('solicForm').onsubmit = function(e){
+      e.preventDefault();
+      let origem = document.getElementById('origemSolic').value;
+      let destino = document.getElementById('destinoSolic').value;
+      if(origem && destino && origem !== destino) {
+        solicitacoes.push({origem, destino});
+        saveSolicitacoes();
+        atualizarPinsSolic();
+        closeModalSolic();
+      } else {
+        alert("Escolha origem e destino diferentes.");
+      }
+    };
+
+    // --- Grid de exclusão ---
+    function atualizarGridSolicitacoes() {
+      let tbody = document.getElementById('solicListBody');
+      tbody.innerHTML = '';
+      solicitacoes.forEach((solic, idx) => {
+        let tr = document.createElement('tr');
+        tr.innerHTML = `<td>${idx+1}</td>
+          <td>${solic.origem}</td>
+          <td>${solic.destino}</td>
+          <td><button onclick="excluirSolic(${idx})" style="background:#c32c2c;color:#fff;padding:3px 10px;border:none;border-radius:5px;cursor:pointer;">Excluir</button></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+    function excluirSolic(idx) {
+      solicitacoes.splice(idx,1);
+      saveSolicitacoes();
+      atualizarGridSolicitacoes();
+      atualizarPinsSolic();
+    }
+
+    // Fecha modal ao clicar fora dele
+    document.querySelectorAll('.modal-bg').forEach(bg=>{
+      bg.addEventListener('click',function(e){
+        if(e.target===bg) bg.style.display='none';
+      });
+    });
+
   </script>
   <!-- Troque YOUR_GOOGLE_MAPS_API_KEY por sua key -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing,geometry&callback=initMap" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=drawing,geometry&callback=initMap" async defer></script>
   <script>
     // Sidebar responsivo
     const menuToggle = document.getElementById('menu-toggle');

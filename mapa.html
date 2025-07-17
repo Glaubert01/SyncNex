@@ -609,6 +609,49 @@
       atualizarPinsSolic();
     }
 
+    //teste
+
+    // Função para salvar tipo de mapa no localStorage
+function salvarTipoMapa(tipo) {
+  localStorage.setItem('tipoMapa', tipo);
+}
+
+// Função para ler tipo de mapa do localStorage (padrão 'roadmap')
+function lerTipoMapa() {
+  return localStorage.getItem('tipoMapa') || 'roadmap';
+}
+
+// No initMap, troque o valor fixo pelo valor salvo:
+function initMap() {
+  const tipoMapa = lerTipoMapa();
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: {lat: -22.5162, lng: -44.0948},
+    zoom: 15,
+    mapTypeId: tipoMapa,
+    streetViewControl: true,
+    fullscreenControl: true,
+  });
+
+  // ... seu código ...
+  document.getElementById('mapBtn').classList.toggle('active', tipoMapa === 'roadmap');
+  document.getElementById('satBtn').classList.toggle('active', tipoMapa === 'satellite');
+  // ... resto do código ...
+}
+
+// Atualize os listeners dos botões:
+document.getElementById('mapBtn').onclick = function() {
+  map.setMapTypeId('roadmap');
+  this.classList.add('active');
+  document.getElementById('satBtn').classList.remove('active');
+  salvarTipoMapa('roadmap');
+};
+document.getElementById('satBtn').onclick = function() {
+  map.setMapTypeId('satellite');
+  this.classList.add('active');
+  document.getElementById('mapBtn').classList.remove('active');
+  salvarTipoMapa('satellite');
+};
+
     // Fecha modal ao clicar fora dele
     document.querySelectorAll('.modal-bg').forEach(bg=>{
       bg.addEventListener('click',function(e){

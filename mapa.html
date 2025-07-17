@@ -98,6 +98,8 @@
 
   <div class="timer-bar" id="timerBar">Próxima atualização em: <span id="timerValue">01:00</span></div>
   <div class="custom-controls">
+    <button id="mapBtn" class="active">Mapa</button>
+    <button id="satBtn">Satélite</button>
     <div class="color-picker" title="Escolher cor da área">
       <div class="color-circle" data-color="#2196f3" style="background:#2196f3;"></div>
       <div class="color-circle" data-color="#43a047" style="background:#43a047;"></div>
@@ -166,6 +168,14 @@
     let solicitacoes = [];
     let solicMarkers = [];
     let rotaAnimadaPolyline = null; // NOVO
+
+    // --- PERSISTÊNCIA TIPO DE MAPA ---
+    function salvarTipoMapa(tipo) {
+      localStorage.setItem('tipoMapa', tipo);
+    }
+    function lerTipoMapa() {
+      return localStorage.getItem('tipoMapa') || 'roadmap';
+    }
 
     // ---- PERSISTÊNCIA GEOAREAS ----
     function saveAreasToStorage() {
@@ -242,34 +252,25 @@
 
     // --- NOVO: Função para desenhar a rota sugerida animada ---
     function desenharRotaSugeridaAnimada() {
-      // 1. Filtrar solicitações destino que tenham geoáreas parent em comum
-      // Map: parentName => [geoareas destino]
       let parentGroups = {};
       solicitacoes.forEach(solic => {
         let destinoArea = drawnAreas.find(a=>a.data.name === solic.destino);
         if(destinoArea && destinoArea.data.parent) {
           let parent = destinoArea.data.parent;
           if (!parentGroups[parent]) parentGroups[parent] = [];
-          // Evita adicionar a mesma geoarea mais de uma vez na rota
           if (!parentGroups[parent].some(x=>x.data.name===destinoArea.data.name)) {
             parentGroups[parent].push(destinoArea);
           }
         }
       });
-      // 2. Para cada parent com 2+ destinos, ordenar por longitude (direita p/esquerda)
       Object.keys(parentGroups).forEach(parentName => {
         let group = parentGroups[parentName];
         if (group.length < 2) return;
-        // Ordenar por lng decrescente (direita -> esquerda)
         group.sort((a, b) => b.polygon.getPath().getArray()[0].lng() - a.polygon.getPath().getArray()[0].lng());
-        // Pegar centros dos polígonos
         let centers = group.map(g => getPolygonCenter(g.polygon));
-        // Animar desenhando uma polilinha entre eles
         animarPolyline(centers);
       });
     }
-
-    // --- NOVO: Função para animar uma polilinha no mapa ---
     function animarPolyline(centers) {
       if (!centers.length) return;
       let animationSpeed = 8; // ms por ponto
@@ -286,13 +287,10 @@
         strokeWeight: 4,
         map: map
       });
-
-      // Gerar lista de todos os pontos intermediários
       let fullPath = [];
       for (let i = 0; i < centers.length - 1; i++) {
         let start = centers[i];
         let end = centers[i+1];
-        // Interpolar (passos) para animação suave
         let steps = 40;
         for (let t = 0; t < steps; t++) {
           let lat = start.lat() + (end.lat() - start.lat()) * (t/steps);
@@ -301,7 +299,6 @@
         }
       }
       fullPath.push(centers[centers.length-1]);
-      // Anima
       let i = 0;
       function stepAnim() {
         if (i < fullPath.length) {
@@ -363,7 +360,6 @@
       const content = document.createElement('div');
       content.className = 'custom-label-box';
 
-      // Botão de deletar
       const deleteBtn = document.createElement('button');
       deleteBtn.className = "delete-area-btn";
       deleteBtn.innerHTML = "&#10005;";
@@ -377,13 +373,11 @@
       };
       content.appendChild(deleteBtn);
 
-      // Nome da área
       const nameDiv = document.createElement('div');
       nameDiv.className = 'area-title';
       nameDiv.textContent = areaObj.name || "(sem nome)";
       content.appendChild(nameDiv);
 
-      // Info de vínculo
       if (areaObj.parent) {
         const parentDiv = document.createElement('div');
         parentDiv.className = "area-parent";
@@ -391,7 +385,6 @@
         content.appendChild(parentDiv);
       }
 
-      // Cria a InfoWindow
       const infowindow = new google.maps.InfoWindow({
         content, position: center, pixelOffset: new google.maps.Size(0,-8)
       });
@@ -418,12 +411,10 @@
         areaName = prompt("Nome da Área:", "") || "Área " + (drawnAreas.length+1);
       }
       let areaColor = color || selectedColor;
-      // Verifica vínculo
       let parentName = preParent;
       if (!parentName) {
         parentName = findParentArea(polygon);
       }
-      // Dados do areaObj
       let areaObj = {
         polygon,
         data: { name: areaName, color: areaColor, parent: parentName },
@@ -433,18 +424,15 @@
 
       polygon.setOptions({ fillColor: areaColor, strokeColor: areaColor });
 
-      // Cria label e botão de exclusão
       let label = createLabelForPolygon(polygon, areaObj.data);
       areaObj.label = label;
 
-      // Exibe label ao clicar na área
       google.maps.event.addListener(polygon, 'click', function(event){
         closeAllLabels();
         label.setPosition(getPolygonCenter(polygon));
         label.open(map);
       });
 
-      // Atualiza label ao editar a área
       google.maps.event.addListener(polygon.getPath(), 'set_at', function(){
         let c = getPolygonCenter(polygon);
         label.setPosition(c);
@@ -463,7 +451,6 @@
         atualizarPinsSolic();
       });
 
-      // Persistência ao deletar
       google.maps.event.addListener(polygon, 'map_changed', function(){
         if(!polygon.getMap()){
           drawnAreas = drawnAreas.filter(a => a.polygon !== polygon);
@@ -488,9 +475,13 @@
     }
 
     function initMap() {
+      const tipoMapa = lerTipoMapa();
       map = new google.maps.Map(document.getElementById('map'), {
-        center: {lat: -22.5162, lng: -44.0948}, zoom: 15, mapTypeId: 'roadmap',
-        streetViewControl: true, fullscreenControl: true,
+        center: {lat: -22.5162, lng: -44.0948},
+        zoom: 15,
+        mapTypeId: tipoMapa,
+        streetViewControl: true,
+        fullscreenControl: true,
       });
 
       drawingManager = new google.maps.drawing.DrawingManager({
@@ -524,16 +515,24 @@
         this.classList.add('active');
       };
       document.getElementById('clearBtn').onclick = function() { clearAllAreas(); };
+
+      // NOVO: persistir tipo de mapa e botões
       document.getElementById('mapBtn').onclick = function() {
         map.setMapTypeId('roadmap');
         this.classList.add('active');
         document.getElementById('satBtn').classList.remove('active');
+        salvarTipoMapa('roadmap');
       };
       document.getElementById('satBtn').onclick = function() {
         map.setMapTypeId('satellite');
         this.classList.add('active');
         document.getElementById('mapBtn').classList.remove('active');
+        salvarTipoMapa('satellite');
       };
+
+      // Selecionar botão ativo ao carregar
+      document.getElementById('mapBtn').classList.toggle('active', tipoMapa === 'roadmap');
+      document.getElementById('satBtn').classList.toggle('active', tipoMapa === 'satellite');
 
       if(!loadedAreas){
         loadedAreas = true;
@@ -609,7 +608,6 @@
       atualizarPinsSolic();
     }
 
-    // Fecha modal ao clicar fora dele
     document.querySelectorAll('.modal-bg').forEach(bg=>{
       bg.addEventListener('click',function(e){
         if(e.target===bg) bg.style.display='none';
@@ -617,11 +615,6 @@
     });
 
   </script>
-  <script>
-  document.addEventListener('DOMContentLoaded', function(){
-    loadSolicitacoes();
-  });
-</script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing,geometry&callback=initMap" async defer></script>
   <script>
     // Sidebar responsivo

@@ -474,7 +474,6 @@
       atualizarPinsSolic();
     }
 
-    // --- INICIALIZAÇÃO DO MAPA ---
     function initMap() {
       const tipoMapa = lerTipoMapa();
       map = new google.maps.Map(document.getElementById('map'), {
@@ -484,10 +483,6 @@
         streetViewControl: true,
         fullscreenControl: true,
       });
-
-      // Destaca botão correto na inicialização
-      document.getElementById('mapBtn').classList.toggle('active', tipoMapa === 'roadmap');
-      document.getElementById('satBtn').classList.toggle('active', tipoMapa === 'satellite');
 
       drawingManager = new google.maps.drawing.DrawingManager({
         drawingMode: null, drawingControl: false,
@@ -521,7 +516,7 @@
       };
       document.getElementById('clearBtn').onclick = function() { clearAllAreas(); };
 
-      // Botões Mapa/Satélite com persistência
+      // NOVO: persistir tipo de mapa e botões
       document.getElementById('mapBtn').onclick = function() {
         map.setMapTypeId('roadmap');
         this.classList.add('active');
@@ -534,6 +529,10 @@
         document.getElementById('mapBtn').classList.remove('active');
         salvarTipoMapa('satellite');
       };
+
+      // Selecionar botão ativo ao carregar
+      document.getElementById('mapBtn').classList.toggle('active', tipoMapa === 'roadmap');
+      document.getElementById('satBtn').classList.toggle('active', tipoMapa === 'satellite');
 
       if(!loadedAreas){
         loadedAreas = true;
@@ -609,7 +608,6 @@
       atualizarPinsSolic();
     }
 
-    // Fecha modal ao clicar fora dele
     document.querySelectorAll('.modal-bg').forEach(bg=>{
       bg.addEventListener('click',function(e){
         if(e.target===bg) bg.style.display='none';

@@ -1561,11 +1561,15 @@ sidebar.dark-mode {
 body.dark-mode .sidebar a, body.dark-mode .sidebar li { color: #ffe144 !important; }
 
 #map {
-  padding: 220px;
+  padding-left: 220px;
 }
 
-.timer-bar, .custom-controls {
-  padding: 220px;
+.custom-controls {
+  padding-left: 220px;
+}
+
+#timer-bar {
+  padding-left: 220px;
 }
 
 

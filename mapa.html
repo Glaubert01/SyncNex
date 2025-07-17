@@ -70,6 +70,38 @@
     .marker-pin {
       filter: drop-shadow(0 1px 6px #3338);
     }
+
+    /* Modal da Versão */
+    #modalVersaoBg {
+      display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.24); align-items: center; justify-content: center;
+    }
+    #modalVersao {
+      background: #fff; border-radius: 10px; padding: 26px 28px 20px 28px; min-width:340px;
+      box-shadow: 0 8px 40px #0005; position: relative; color: #222; font-family: 'Roboto', Arial, sans-serif;
+      animation: fadeIn .18s;
+      max-width: 94vw;
+    }
+    #modalVersao h3 { margin-top:0; color: #23488b; font-size: 1.25em;}
+    #modalVersao ul { margin-top: 10px; padding-left: 22px; font-size: 1.04em;}
+    #modalVersao .modal-close { position: absolute; top: 10px; right: 14px; font-size: 23px; background: none; border: none; color: #b21c1c; cursor: pointer;}
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.96);}
+      to { opacity: 1; transform: scale(1);}
+    }
+    .footer .versao-btn {
+      border: none; outline: none; background: none; font: inherit; color: inherit; cursor: pointer;
+      border-radius: 30px; padding: 4px 16px; transition: background 0.15s;
+      font-size: 1em; margin-left: 12px;
+      display: inline-block;
+    }
+    .footer .versao-btn:active, .footer .versao-btn:hover {
+      background: #212638;
+      color: #ffda48;
+      box-shadow: 0 0 4px #0072ce30;
+    }
+    .versao-btn b { color: #ffe050;}
+    .versao-btn .vnum { color: #6ca3ff; font-weight: 600;}
   </style>
 </head>
 <body>
@@ -145,6 +177,21 @@
         </thead>
         <tbody id="solicListBody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- MODAL DE VERSÃO (novo) -->
+  <div class="modal-bg" id="modalVersaoBg">
+    <div id="modalVersao">
+      <button class="modal-close" onclick="document.getElementById('modalVersaoBg').style.display='none'">&times;</button>
+      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.0.0</span></h3>
+      <ul>
+        <li>Mapas com modo Satélite ou Mapa persistente.</li>
+        <li>Áreas desenhadas e solicitações salvas localmente.</li>
+        <li>Modal para inclusão e exclusão de solicitações.</li>
+        <li>Animação de rota sugerida no mapa.</li>
+        <li>Sidebar responsiva, tema escuro e navegação.</li>
+      </ul>
     </div>
   </div>
 
@@ -472,6 +519,7 @@
       atualizarPinsSolic();
     }
 
+    // --- INICIALIZAÇÃO DO MAPA ---
     function initMap() {
       const tipoMapa = lerTipoMapa();
       map = new google.maps.Map(document.getElementById('map'), {
@@ -515,22 +563,22 @@
       document.getElementById('clearBtn').onclick = function() { clearAllAreas(); };
 
       // NOVO: persistir tipo de mapa e botões
-      document.getElementById('mapBtn').onclick = function() {
-        map.setMapTypeId('roadmap');
-        this.classList.add('active');
-        document.getElementById('satBtn').classList.remove('active');
-        salvarTipoMapa('roadmap');
-      };
-      document.getElementById('satBtn').onclick = function() {
-        map.setMapTypeId('satellite');
-        this.classList.add('active');
-        document.getElementById('mapBtn').classList.remove('active');
-        salvarTipoMapa('satellite');
-      };
+      //document.getElementById('mapBtn').onclick = function() {
+      //  map.setMapTypeId('roadmap');
+       // this.classList.add('active');
+        //document.getElementById('satBtn').classList.remove('active');
+        //salvarTipoMapa('roadmap');
+      //};
+      //document.getElementById('satBtn').onclick = function() {
+       // map.setMapTypeId('satellite');
+        //this.classList.add('active');
+        //document.getElementById('mapBtn').classList.remove('active');
+        //salvarTipoMapa('satellite');
+      //};
 
       // Selecionar botão ativo ao carregar
-      document.getElementById('mapBtn').classList.toggle('active', tipoMapa === 'roadmap');
-      document.getElementById('satBtn').classList.toggle('active', tipoMapa === 'satellite');
+     // document.getElementById('mapBtn').classList.toggle('active', tipoMapa === 'roadmap');
+      //document.getElementById('satBtn').classList.toggle('active', tipoMapa === 'satellite');
 
       if(!loadedAreas){
         loadedAreas = true;
@@ -612,6 +660,16 @@
       });
     });
 
+    // === MODAL DE VERSAO (novo) ===
+    document.addEventListener('DOMContentLoaded', function() {
+      var versaoBtn = document.getElementById('versaoBtn');
+      if (versaoBtn) {
+        versaoBtn.addEventListener('click', function(e){
+          e.preventDefault();
+          document.getElementById('modalVersaoBg').style.display = 'flex';
+        });
+      }
+    });
   </script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing,geometry&callback=initMap" async defer></script>
   <script>
@@ -649,7 +707,9 @@
       <a href="#">Política de Privacidade</a>
       <a href="#">Termos de Uso</a>
     </nav>
-    <span class="versao">Versão <b>V1.0.0</b></span>
+    <button class="versao-btn" id="versaoBtn">
+      <span>Versão <b class="vnum">V1.0.0</b></span>
+    </button>
   </div>
 </footer>
 </html>

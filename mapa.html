@@ -150,23 +150,6 @@
     </div>
   </div>
 
-   <!-- Modal Versão (fica visível apenas quando ativado via JS) -->
-  <div class="modal-versao-bg" id="modalVersao">
-    <div class="modal-versao">
-      <button class="close-modal-versao" onclick="fecharModalVersao()" title="Fechar">&times;</button>
-      <h3>Funcionalidades da versão <span style="color:#6ab1fa">V1.0.0</span></h3>
-      <ul>
-        <li>Persistência das áreas desenhadas no mapa (<b>localStorage</b>)</li>
-        <li>Persistência das solicitações cadastradas</li>
-        <li>Seleção e persistência do modo <b>Mapa/Satélite</b></li>
-        <li>Animação de rotas sugeridas para solicitações agrupadas</li>
-        <li>Interface escura/clara com botão alternar</li>
-        <li>Layout responsivo e botões acessíveis</li>
-      </ul>
-      <span style="font-size:0.97em; color:#bbb; margin-top:8px; display:block;">Última atualização: Jul/2025</span>
-    </div>
-  </div>
-
   <script>
     // Timer countdown
     let seconds = 60;
@@ -491,6 +474,7 @@
       atualizarPinsSolic();
     }
 
+    // --- INICIALIZAÇÃO DO MAPA ---
     function initMap() {
       const tipoMapa = lerTipoMapa();
       map = new google.maps.Map(document.getElementById('map'), {
@@ -500,6 +484,10 @@
         streetViewControl: true,
         fullscreenControl: true,
       });
+
+      // Destaca botão correto na inicialização
+      document.getElementById('mapBtn').classList.toggle('active', tipoMapa === 'roadmap');
+      document.getElementById('satBtn').classList.toggle('active', tipoMapa === 'satellite');
 
       drawingManager = new google.maps.drawing.DrawingManager({
         drawingMode: null, drawingControl: false,
@@ -533,7 +521,7 @@
       };
       document.getElementById('clearBtn').onclick = function() { clearAllAreas(); };
 
-      // NOVO: persistir tipo de mapa e botões
+      // Botões Mapa/Satélite com persistência
       document.getElementById('mapBtn').onclick = function() {
         map.setMapTypeId('roadmap');
         this.classList.add('active');
@@ -546,10 +534,6 @@
         document.getElementById('mapBtn').classList.remove('active');
         salvarTipoMapa('satellite');
       };
-
-      // Selecionar botão ativo ao carregar
-      document.getElementById('mapBtn').classList.toggle('active', tipoMapa === 'roadmap');
-      document.getElementById('satBtn').classList.toggle('active', tipoMapa === 'satellite');
 
       if(!loadedAreas){
         loadedAreas = true;
@@ -625,6 +609,7 @@
       atualizarPinsSolic();
     }
 
+    // Fecha modal ao clicar fora dele
     document.querySelectorAll('.modal-bg').forEach(bg=>{
       bg.addEventListener('click',function(e){
         if(e.target===bg) bg.style.display='none';
@@ -668,29 +653,7 @@
       <a href="#">Política de Privacidade</a>
       <a href="#">Termos de Uso</a>
     </nav>
-   <!-- BOTÃO CLICÁVEL DE VERSÃO -->
-    <span class="versao">
-      <span class="versao-btn" id="btnVersao" tabindex="0">
-        <b>Versão</b> <span class="version-number">V1.0.0</span>
-      </span>
-    </span>
+    <span class="versao">Versão <b>V1.0.0</b></span>
   </div>
 </footer>
-<script>
-  // Modal de Versão
-  function abrirModalVersao() {
-    document.getElementById('modalVersao').style.display = 'flex';
-  }
-  function fecharModalVersao() {
-    document.getElementById('modalVersao').style.display = 'none';
-  }
-  document.getElementById('btnVersao').onclick = abrirModalVersao;
-  document.getElementById('btnVersao').onkeydown = function(e){
-    if(e.key === 'Enter' || e.key === ' ') abrirModalVersao();
-  };
-  // Fechar modal ao clicar fora
-  document.getElementById('modalVersao').addEventListener('click', function(e){
-    if (e.target === this) fecharModalVersao();
-  });
-</script>
 </html>

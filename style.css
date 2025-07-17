@@ -1564,5 +1564,9 @@ body.dark-mode .sidebar a, body.dark-mode .sidebar li { color: #ffe144 !importan
   padding: 220px;
 }
 
+.timer-bar, .custom-controls {
+  padding: 220px;
+}
+
 
 

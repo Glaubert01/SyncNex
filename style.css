@@ -1594,11 +1594,14 @@ body.dark-mode .sidebar a, body.dark-mode .sidebar li { color: #ffe144 !importan
   padding: 4px 8px;
 }
 
-body.dark-mode .footer {
-  background: #1b1e22;
-  color: #f1f1f1;
-  border-top: 1px solid #2c2c2c;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.24);
+/* Correção forçada para o rodapé no modo claro */
+body:not(.dark-mode) .footer {
+  background: #f8fafc !important;
+  color: #003b71 !important;
+  border-top: 1px solid #e0e0e0 !important;
+  box-shadow: 0 -4px 20px rgba(0, 59, 113, 0.08) !important;
+}
+
 
 
 

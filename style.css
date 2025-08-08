@@ -1561,6 +1561,41 @@ sidebar.dark-mode {
 body.dark-mode .sidebar a, body.dark-mode .sidebar li { color: #ffe144 !important; }
 
 
+.kanban-column {
+  box-sizing: border-box;
+  width: 250px; /* ou 100%, se for com flexbox */
+  padding: 10px;
+  background: #fff;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.add-card-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 5px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.add-card-form input[type="text"],
+.add-card-form input[type="date"] {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.add-card-form button {
+  flex: 1 1 100%;
+  padding: 4px 8px;
+}
+
+
+
 
 
 

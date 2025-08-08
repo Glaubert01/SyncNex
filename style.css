@@ -1211,8 +1211,8 @@ body.dark-mode .add-card-form button[type="submit"]:hover {
 
 .footer {
   width: 100%;
-  background: #fff;
-  color: #333;
+  background: #f8fafc; /* ou outro claro como #fff */
+  color: #003b71;
   padding: 16px 0 8px 0;
   box-shadow: 0 -2px 14px #0001;
   position: relative;

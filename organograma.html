@@ -17,11 +17,19 @@
       --activity-bg:#f6f7fb;
     }
 
+    /* ===== Botão dark mode SEMPRE clicável ===== */
+    .darkmode-btn{
+      position:fixed; top:12px; right:14px;
+      z-index:9999; cursor:pointer;
+      border:none; background:#fff; border-radius:999px; width:40px; height:40px;
+      box-shadow:0 6px 14px rgba(0,0,0,.12);
+    }
+    body.dark-mode .darkmode-btn{ background:#0e2235; color:#fff }
+
     /* ===== Área do organograma + scale-to-fit ===== */
     .org-wrapper{
-      padding:12px;
-      overflow-x:hidden;      /* nunca mostra rolagem horizontal */
-      max-width:100%;
+      padding:12px; overflow-x:hidden; max-width:100%;
+      position:relative; z-index:1;  /* fica abaixo do botão */
     }
     .fitouter{ margin:0 auto; width:max-content; }
     .fitbox{
@@ -65,8 +73,8 @@
     .stack{display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:8px}
     .stack .connector-v{height:18px}
 
-    /* Linha horizontal (decorativa) */
-    .rail{ width:100%; height:6px; background:var(--line); border-radius:4px; opacity:.45; }
+    /* Linha horizontal (decorativa) – não intercepta clique */
+    .rail{ width:100%; height:6px; background:var(--line); border-radius:4px; opacity:.45; pointer-events:none; }
 
     /* Pessoas sempre em uma única linha */
     .people-row{
@@ -100,7 +108,8 @@
   </style>
 </head>
 <body>
-  <button id="toggle-mode" class="darkmode-btn" title="Alternar modo escuro">🌓</button>
+  <!-- clique direto chama a função, além do listener -->
+  <button id="toggle-mode" class="darkmode-btn" title="Alternar modo escuro" onclick="toggleDarkMode()">🌓</button>
   <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu">&#9776;</button>
 
   <div class="container">
@@ -157,9 +166,6 @@
     };
 
     // ===== Cores por caixa =====
-    // team: cor do cartão "Equipe"
-    // pessoas[j]: cor do cartão da pessoa j
-    // subcards[i][j]: cor do cartão Pilar(i) x Pessoa(j)
     let colors = JSON.parse(localStorage.getItem("org-colors")) || {
       team: null,
       pessoas: [],
@@ -172,23 +178,15 @@
     function persistCollapse(){ localStorage.setItem("org-colapso", JSON.stringify(colapso)); }
     function persistColors(){ localStorage.setItem("org-colors", JSON.stringify(colors)); }
 
-    // Garante que 'colors' tenha o mesmo formato/tamanho de 'data'
+    // Normaliza vetor de cores
     function normalizeColors(){
       if (!colors.pessoas) colors.pessoas = [];
       if (!colors.subcards) colors.subcards = [];
-
-      // ajusta pessoas
       while (colors.pessoas.length < data.pessoas.length) colors.pessoas.push(null);
       if (colors.pessoas.length > data.pessoas.length) colors.pessoas.length = data.pessoas.length;
-
-      // ajusta linhas de subcards (pilares)
-      while (colors.subcards.length < data.pilares.length) {
-        colors.subcards.push(Array(data.pessoas.length).fill(null));
-      }
+      while (colors.subcards.length < data.pilares.length) colors.subcards.push(Array(data.pessoas.length).fill(null));
       if (colors.subcards.length > data.pilares.length) colors.subcards.length = data.pilares.length;
-
-      // ajusta colunas de subcards (pessoas)
-      colors.subcards.forEach((row, i) => {
+      colors.subcards.forEach((row) => {
         while (row.length < data.pessoas.length) row.push(null);
         if (row.length > data.pessoas.length) row.length = data.pessoas.length;
       });
@@ -196,46 +194,36 @@
     }
     normalizeColors();
 
-    // ===== Helpers de cor =====
+    // Helpers de cor
     function isDark(hex){
       if (!hex) return false;
       const c = hex.replace('#','');
       const bigint = parseInt(c.length===3 ? c.split('').map(x=>x+x).join('') : c, 16);
-      const r = (bigint >> 16) & 255;
-      const g = (bigint >> 8) & 255;
-      const b = bigint & 255;
-      // luminância relativa
+      const r = (bigint >> 16) & 255, g = (bigint >> 8) & 255, b = bigint & 255;
       const l = 0.2126*(r/255)**2.2 + 0.7152*(g/255)**2.2 + 0.0722*(b/255)**2.2;
       return l < 0.45;
     }
     function applyCardColor(el, hex){
       if (!el) return;
-      if (hex){
-        el.style.background = hex;
-        el.style.color = isDark(hex) ? '#f9fbff' : '#0b2233';
-      }else{
-        el.style.background = '';
-        el.style.color = '';
-      }
+      if (hex){ el.style.background = hex; el.style.color = isDark(hex) ? '#f9fbff' : '#0b2233'; }
+      else{ el.style.background = ''; el.style.color = ''; }
     }
 
-    // ===== Render =====
+    // Render
     function renderChart() {
       const wrapper = document.getElementById("organograma");
       wrapper.innerHTML = "";
 
       const outer = document.createElement("div");
-      outer.id = "fitouter";
-      outer.className = "fitouter";
+      outer.id = "fitouter"; outer.className = "fitouter";
 
       const fitbox = document.createElement("div");
-      fitbox.id = "fitbox";
-      fitbox.className = "fitbox";
+      fitbox.id = "fitbox"; fitbox.className = "fitbox";
 
       const root = document.createElement("div");
       root.className = "org-root";
 
-      // Cartão topo (Equipe)
+      // topo equipe
       const topo = document.createElement("div");
       topo.className = "org-card";
       topo.innerHTML = `
@@ -250,7 +238,7 @@
       root.appendChild(connectorV(36));
       root.appendChild(rail());
 
-      // Pessoas em linha única
+      // Pessoas numa linha
       const row = document.createElement("div");
       row.className = "people-row";
 
@@ -258,7 +246,7 @@
         const col = document.createElement("div");
         col.className = "person-col";
 
-        const aberto = !(colapso[j]); // default expandido
+        const aberto = !(colapso[j]);
 
         const pessoaCard = document.createElement("div");
         pessoaCard.className = "org-card org-person";
@@ -272,24 +260,19 @@
           <span class="chev">${aberto ? "▾" : "▸"}</span>
         `;
         pessoaCard.addEventListener("click", () => {
-          colapso[j] = !colapso[j];
-          localStorage.setItem("org-colapso", JSON.stringify(colapso));
-          renderChart();
+          colapso[j] = !colapso[j]; persistCollapse(); renderChart();
         });
         applyCardColor(pessoaCard, colors.pessoas[j]);
         col.appendChild(pessoaCard);
 
-        // Conector pessoa->pilares
         col.appendChild(connectorV(24));
 
-        // Pilha de pilares (colapsável)
         const pilhaWrap = document.createElement("div");
         pilhaWrap.className = "collapse";
 
         const pilha = document.createElement("div");
         pilha.className = "stack";
 
-        // Sempre mostra TODOS os pilares
         data.pilares.forEach((pilarNome, i) => {
           const atividade = (data.atividades[i] || [])[j] ?? "";
 
@@ -321,10 +304,8 @@
         pilhaWrap.appendChild(pilha);
         col.appendChild(pilhaWrap);
 
-        // Altura colapsável
         requestAnimationFrame(()=>{
-          if (colapso[j]) pilhaWrap.style.maxHeight = "0px";
-          else            pilhaWrap.style.maxHeight = pilha.scrollHeight + "px";
+          pilhaWrap.style.maxHeight = colapso[j] ? "0px" : pilha.scrollHeight + "px";
         });
 
         row.appendChild(col);
@@ -335,36 +316,30 @@
       outer.appendChild(fitbox);
       wrapper.appendChild(outer);
 
-      // aplica scale-to-fit centralizado (sem corte)
       requestAnimationFrame(fitToWidth);
     }
 
-    // ---- UI helpers ----
     function rail(){ const r=document.createElement("div"); r.className="rail"; return r; }
     function connectorV(h){
       const v = document.createElement("div");
-      v.className = "connector-v";
-      if (h) v.style.height = h + "px";
-      return v;
+      v.className = "connector-v"; if (h) v.style.height = h + "px"; return v;
     }
 
-    // Ajuste de escala para caber 100% em uma única linha
+    // Scale-to-fit centralizado
     function fitToWidth(){
       const wrapper = document.getElementById("organograma");
       const fitbox  = document.getElementById("fitbox");
       const outer   = document.getElementById("fitouter");
       if(!wrapper || !fitbox || !outer) return;
-
       fitbox.style.transform = "scale(1)";
       const naturalW = fitbox.scrollWidth;
       const wrapperW = wrapper.clientWidth;
       const scale = Math.min(1, (wrapperW - 24) / naturalW);
-
       fitbox.style.transform = `scale(${scale})`;
       outer.style.width = Math.max(0, Math.floor(naturalW * scale)) + "px";
     }
 
-    // ===== Atualizações de estado =====
+    // ===== Ações =====
     function toggleEditMode() {
       editMode = !editMode;
       const btn = document.getElementById("edit-mode-btn");
@@ -380,107 +355,64 @@
       data.atividades[i][j] = valor || "";
     }
 
-    // Seleção de cor
     function updateColor(tipo, a, b, hex){
-      if (tipo === 'team'){
-        colors.team = hex;
-      } else if (tipo === 'pessoa'){
-        colors.pessoas[a] = hex;
-      } else if (tipo === 'subcard'){
-        if (!colors.subcards[a]) colors.subcards[a] = [];
-        colors.subcards[a][b] = hex;
-      }
-      persistColors();
-      renderChart();
+      if (tipo === 'team'){ colors.team = hex; }
+      else if (tipo === 'pessoa'){ colors.pessoas[a] = hex; }
+      else if (tipo === 'subcard'){ if (!colors.subcards[a]) colors.subcards[a] = []; colors.subcards[a][b] = hex; }
+      persistColors(); renderChart();
     }
 
     function addPessoa(){
-      const nome = prompt("Nome da nova pessoa:");
-      if (!nome) return;
-      data.pessoas.push(nome);
-      data.atividades.forEach(r => r.push(""));
+      const nome = prompt("Nome da nova pessoa:"); if (!nome) return;
+      data.pessoas.push(nome); data.atividades.forEach(r => r.push(""));
       colapso[data.pessoas.length - 1] = false;
-
-      // cores
-      colors.pessoas.push(null);
-      colors.subcards.forEach(row => row.push(null));
-
+      colors.pessoas.push(null); colors.subcards.forEach(row => row.push(null));
       persistCollapse(); normalizeColors(); renderChart();
     }
 
     function addPilar(){
-      const nome = prompt("Nome do novo pilar:");
-      if (!nome) return;
-      data.pilares.push(nome);
-      const nova = data.pessoas.map(()=>"");
-      data.atividades.push(nova);
-
-      // cores
+      const nome = prompt("Nome do novo pilar:"); if (!nome) return;
+      data.pilares.push(nome); data.atividades.push(data.pessoas.map(()=>""));
       colors.subcards.push(Array(data.pessoas.length).fill(null));
-
       normalizeColors(); renderChart();
     }
 
     function removerPessoa(index){
       if (!confirm("Remover esta pessoa e suas atividades?")) return;
-      data.pessoas.splice(index,1);
-      data.atividades.forEach(r=>r.splice(index,1));
-
-      // cores
-      colors.pessoas.splice(index,1);
-      colors.subcards.forEach(r=>r.splice(index,1));
-
-      // reindexa colapso
-      const novo = {};
-      data.pessoas.forEach((_, idx)=> novo[idx] = colapso[idx] || false);
+      data.pessoas.splice(index,1); data.atividades.forEach(r=>r.splice(index,1));
+      colors.pessoas.splice(index,1); colors.subcards.forEach(r=>r.splice(index,1));
+      const novo = {}; data.pessoas.forEach((_, idx)=> novo[idx] = colapso[idx] || false);
       colapso = novo; persistCollapse(); normalizeColors(); renderChart();
     }
 
     function removerPilar(index){
       if (!confirm("Remover este pilar (todas as atividades nas pessoas)?")) return;
-      data.pilares.splice(index,1);
-      data.atividades.splice(index,1);
-
-      // cores
+      data.pilares.splice(index,1); data.atividades.splice(index,1);
       colors.subcards.splice(index,1);
-
       normalizeColors(); renderChart();
     }
 
-    function limparAtividade(i,j){
-      if (!data.atividades[i]) return;
-      data.atividades[i][j] = "";
-      renderChart();
+    function limparAtividade(i,j){ if (!data.atividades[i]) return; data.atividades[i][j] = ""; renderChart(); }
+
+    function salvar(){ localStorage.setItem("organograma", JSON.stringify(data)); alert("Salvo com sucesso!"); }
+
+    // ===== Dark mode persistente =====
+    function toggleDarkMode(){
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem("dark-mode", document.body.classList.contains("dark-mode") ? "1" : "");
     }
 
-    function salvar(){
-      localStorage.setItem("organograma", JSON.stringify(data));
-      alert("Salvo com sucesso!");
-    }
-
-    // ---- DARK MODE + menu ----
     document.addEventListener("DOMContentLoaded", () => {
-      // Dark mode persistente
-      if (localStorage.getItem("dark-mode") === "1") {
-        document.body.classList.add("dark-mode");
-      }
+      if (localStorage.getItem("dark-mode") === "1") document.body.classList.add("dark-mode");
       const toggleButton = document.getElementById("toggle-mode");
-      if (toggleButton) {
-        toggleButton.addEventListener("click", () => {
-          document.body.classList.toggle("dark-mode");
-          localStorage.setItem("dark-mode", document.body.classList.contains("dark-mode") ? "1" : "");
-        });
-      }
-
+      if (toggleButton) toggleButton.addEventListener("click", toggleDarkMode);
       renderChart();
       window.addEventListener("resize", fitToWidth);
     });
 
     const menuToggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');
-    menuToggle.addEventListener('click', function () {
-      sidebar.classList.toggle('active');
-    });
+    menuToggle.addEventListener('click', function () { sidebar.classList.toggle('active'); });
     document.addEventListener('click', function (e) {
       if (window.innerWidth <= 768 && sidebar.classList.contains('active') &&
           !sidebar.contains(e.target) && !menuToggle.contains(e.target)) {

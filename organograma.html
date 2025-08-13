@@ -7,12 +7,22 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="assets/syncnex-favicon.png">
   <style>
-    /* ===== ORG CHART ===== */
     :root{
-      --line:#2a5f8a;          /* linhas (claro) */
-      --line-dark:#7fb3ff;     /* linhas (dark mode) */
+      --line:#2a5f8a;
+      --line-dark:#7fb3ff;
     }
-    .org-wrapper{padding:12px; overflow-x:hidden; max-width:100%}
+    /* Área do organograma */
+    .org-wrapper{
+      padding:12px;
+      overflow-x:hidden;   /* evita barra horizontal */
+      max-width:100%;
+    }
+    /* Caixa que recebe o scale-to-fit */
+    .fitbox{
+      transform-origin: top center;
+      display:inline-block;
+    }
+
     .org-root{display:flex;flex-direction:column;align-items:center;gap:22px}
 
     .org-card{
@@ -21,9 +31,7 @@
       border-radius:14px; padding:12px; font-weight:700;
       box-shadow:0 1px 0 rgba(0,0,0,.08), 0 6px 14px rgba(0,0,0,.06);
     }
-    .org-person{
-      cursor:pointer; user-select:none; position:relative;
-    }
+    .org-person{cursor:pointer; user-select:none; position:relative;}
     .org-person .chev{font-weight:900; opacity:.9; margin-left:6px}
 
     .org-subcard{
@@ -38,23 +46,21 @@
 
     /* Conectores reforçados */
     .connector-v{
-      width:4px; background:var(--line); height:28px; margin:2px auto; border-radius:2px;
+      width:6px; background:var(--line); height:28px; margin:2px auto; border-radius:3px;
       box-shadow:0 0 0 1px rgba(0,0,0,.03);
     }
     .stack{display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:8px}
     .stack .connector-v{height:18px}
 
-    /* Linha horizontal entre níveis (opcional) */
-    .rail{
-      width:100%; max-width:1100px; height:4px; background:var(--line); border-radius:3px; opacity:.5;
-    }
+    /* Linha horizontal entre níveis (decorativa) */
+    .rail{ width:100%; height:6px; background:var(--line); border-radius:4px; opacity:.45; }
 
-    /* Pessoas: quebram em várias linhas, centralizadas, sem rolagem horizontal */
+    /* Pessoas: uma ÚNICA linha (nowrap); o fitbox trata de escalar para caber */
     .people-row{
-      display:flex; flex-wrap:wrap; gap:26px 36px; justify-content:center; align-items:flex-start;
+      display:flex; flex-wrap:nowrap; gap:32px; justify-content:center; align-items:flex-start;
       width:100%;
     }
-    .person-col{display:flex; flex-direction:column; align-items:center; padding:2px 4px}
+    .person-col{display:flex; flex-direction:column; align-items:center; padding:0 4px}
 
     /* Dark mode */
     body.dark-mode .org-card{--card-bg:#124c74; --card-fg:#e6f0f7}
@@ -64,18 +70,8 @@
 
     .label-muted{font-size:11px; font-weight:600; opacity:.9; letter-spacing:.04em}
 
-    /* Animação colapsável */
-    .collapse{
-      overflow:hidden; transition:max-height .28s ease; width:100%; display:block;
-    }
-
-    /* Pequenos ajustes responsivos */
-    @media (max-width: 1024px){
-      .org-subcard{width:min(360px, 96vw)}
-    }
-    @media (max-width: 560px){
-      .org-card{min-width:140px}
-    }
+    /* Colapsável */
+    .collapse{ overflow:hidden; transition:max-height .28s ease; width:100%; display:block; }
   </style>
 </head>
 <body>
@@ -108,7 +104,9 @@
     <main class="main-content">
       <h2 class="titulo">Organograma de Atividades Staffs GIL</h2>
 
-      <div id="organograma" class="org-wrapper"></div>
+      <div id="organograma" class="org-wrapper">
+        <!-- o JS injeta .fitbox aqui -->
+      </div>
 
       <div class="controls">
         <button id="edit-mode-btn" onclick="toggleEditMode()">Editar</button>
@@ -135,13 +133,17 @@
 
     // Estado de colapso por pessoa (persiste)
     let colapso = JSON.parse(localStorage.getItem("org-colapso")) || {};
-
     function persistCollapse(){ localStorage.setItem("org-colapso", JSON.stringify(colapso)); }
 
-    // Render
+    // --------- RENDER ----------
     function renderChart() {
-      const wrap = document.getElementById("organograma");
-      wrap.innerHTML = "";
+      const wrapper = document.getElementById("organograma");
+      wrapper.innerHTML = "";
+
+      // Fitbox para permitir escala
+      const fitbox = document.createElement("div");
+      fitbox.id = "fitbox";
+      fitbox.className = "fitbox";
 
       const root = document.createElement("div");
       root.className = "org-root";
@@ -151,15 +153,10 @@
       topo.innerHTML = `<div class="label-muted">EQUIPE</div><div>Staffs GIL</div>`;
       root.appendChild(topo);
 
-      // Conector raiz reforçado
       root.appendChild(connectorV(36));
+      root.appendChild(rail());
 
-      // Linha horizontal suave (apenas decorativa entre níveis)
-      const rail = document.createElement("div");
-      rail.className = "rail";
-      root.appendChild(rail);
-
-      // Pessoas (quebram de linha automaticamente)
+      // Pessoas numa ÚNICA linha (nowrap)
       const row = document.createElement("div");
       row.className = "people-row";
 
@@ -187,9 +184,7 @@
         col.appendChild(pessoaCard);
 
         // Conector pessoa->pilares
-        if (temAlgumConteudoParaPessoa(idxPessoa) || editMode) {
-          col.appendChild(connectorV(24));
-        }
+        col.appendChild(connectorV(24));
 
         // Pilha vertical de pilares (colapsável)
         const pilhaWrap = document.createElement("div");
@@ -198,31 +193,29 @@
         const pilha = document.createElement("div");
         pilha.className = "stack";
 
+        // >>> SEMPRE MOSTRA TODOS OS PILARES <<<
         data.pilares.forEach((pilarNome, i) => {
-          const atividade = (data.atividades[i] || [])[idxPessoa] || "";
-          if (atividade.trim() !== "" || editMode) {
-            const bloco = document.createElement("div");
-            bloco.className = "org-subcard";
-            bloco.innerHTML = `
-              <div class="label-muted">PILAR</div>
-              <div class="editable" contenteditable="${editMode}"
-                   oninput="updatePilar(${i}, this.innerText)">${pilarNome}</div>
-              ${editMode ? `<span class="xbtn" title="Remover Pilar" onclick="removerPilar(${i})">🗑️</span>` : ""}
-              <div class="org-activity editable" contenteditable="${editMode}"
-                   oninput="updateAtividade(${i}, ${idxPessoa}, this.innerText)">${atividade}</div>
-              ${editMode ? `<div style="margin-top:6px;"><button onclick="limparAtividade(${i}, ${idxPessoa})">Limpar</button></div>` : ""}
-            `;
+          const atividade = (data.atividades[i] || [])[idxPessoa] ?? "";
+          const bloco = document.createElement("div");
+          bloco.className = "org-subcard";
+          bloco.innerHTML = `
+            <div class="label-muted">PILAR</div>
+            <div class="editable" contenteditable="${editMode}"
+                 oninput="updatePilar(${i}, this.innerText)">${pilarNome}</div>
+            ${editMode ? `<span class="xbtn" title="Remover Pilar" onclick="removerPilar(${i})">🗑️</span>` : ""}
+            <div class="org-activity editable" contenteditable="${editMode}"
+                 oninput="updateAtividade(${i}, ${idxPessoa}, this.innerText)">${atividade}</div>
+            ${editMode ? `<div style="margin-top:6px;"><button onclick="limparAtividade(${i}, ${idxPessoa})">Limpar</button></div>` : ""}
+          `;
 
-            // Conector acima de cada pilar
-            const holder = document.createElement("div");
-            holder.style.display = "flex";
-            holder.style.flexDirection = "column";
-            holder.style.alignItems = "center";
-            holder.appendChild(connectorV(16));
-            holder.appendChild(bloco);
+          const holder = document.createElement("div");
+          holder.style.display = "flex";
+          holder.style.flexDirection = "column";
+          holder.style.alignItems = "center";
+          holder.appendChild(connectorV(16));
+          holder.appendChild(bloco);
 
-            pilha.appendChild(holder);
-          }
+          pilha.appendChild(holder);
         });
 
         pilhaWrap.appendChild(pilha);
@@ -241,18 +234,45 @@
       });
 
       root.appendChild(row);
-      wrap.appendChild(root);
+      fitbox.appendChild(root);
+      wrapper.appendChild(fitbox);
+
+      // aplica scale-to-fit sem rolagem horizontal
+      requestAnimationFrame(fitToWidth);
     }
 
-    function temAlgumConteudoParaPessoa(j){
-      return data.pilares.some((_, i) => ((data.atividades[i]||[])[j]||"").trim() !== "");
+    // ---- Funções auxiliares de UI ----
+    function rail(){
+      const r = document.createElement("div");
+      r.className = "rail";
+      return r;
     }
-
     function connectorV(h){
       const v = document.createElement("div");
       v.className = "connector-v";
       if (h) v.style.height = h + "px";
       return v;
+    }
+
+    // Ajusta a escala horizontal para que TODAS as pessoas caibam na mesma linha
+    function fitToWidth(){
+      const wrapper = document.getElementById("organograma");
+      const fitbox = document.getElementById("fitbox");
+      if(!wrapper || !fitbox) return;
+
+      // reseta para medir largura "natural"
+      fitbox.style.transform = "scale(1)";
+      fitbox.style.width = "auto";
+
+      const wrapperW = wrapper.clientWidth;
+      const naturalW = fitbox.scrollWidth;
+
+      // margem de segurança 24px
+      const scale = Math.min(1, (wrapperW - 24) / naturalW);
+
+      fitbox.style.transform = `scale(${scale})`;
+      // fixa largura natural para evitar reflow após o scale
+      fitbox.style.width = naturalW + "px";
     }
 
     // ------- Atualizações de estado -------
@@ -264,11 +284,11 @@
       if (!editMode) salvar();
     }
 
-    function updateNome(index, valor){ data.pessoas[index] = valor.trim(); }
-    function updatePilar(index, valor){ data.pilares[index] = valor.trim(); }
+    function updateNome(index, valor){ data.pessoas[index] = (valor || "").trim(); }
+    function updatePilar(index, valor){ data.pilares[index] = (valor || "").trim(); }
     function updateAtividade(i, j, valor){
       if (!data.atividades[i]) data.atividades[i] = [];
-      data.atividades[i][j] = valor;
+      data.atividades[i][j] = valor || "";
     }
 
     function addPessoa(){
@@ -294,6 +314,7 @@
       if (!confirm("Remover esta pessoa e suas atividades?")) return;
       data.pessoas.splice(index,1);
       data.atividades.forEach(r=>r.splice(index,1));
+      // Reindexa colapso
       const novo = {};
       data.pessoas.forEach((_, idx)=> novo[idx] = colapso[idx] || false);
       colapso = novo; persistCollapse();
@@ -331,6 +352,7 @@
         });
       }
       renderChart();
+      window.addEventListener("resize", fitToWidth);
     });
 
     const menuToggle = document.getElementById('menu-toggle');

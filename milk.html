@@ -186,11 +186,11 @@
   <div class="modal-bg" id="modalVersaoBg">
     <div id="modalVersao">
       <button class="modal-close" onclick="document.getElementById('modalVersaoBg').style.display='none'">&times;</button>
-      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.2.0 (Release date: 13/08/25)</span></h3>
+      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.3.0 (Release date: 13/08/25)</span></h3>
       <ul>
-        <li>Status por entrega com cores: aguardando (vermelho), carregado (laranja), em rota (azul), entregue (verde).</li>
-        <li>Entregue mostra ✓ em vez de número.</li>
-        <li>Alteração de status também em “Gerenciar Entregas”.</li>
+        <li>Status por entrega com cores e ✓ para Entregue.</li>
+        <li>Rota e numeração só consideram não-entregues.</li>
+        <li>Edição de status na tela “Gerenciar Entregas”.</li>
       </ul>
     </div>
   </div>
@@ -306,7 +306,7 @@
         const areaName = areaObj.name;
         polygon.setMap(null);
         drawnAreas = drawnAreas.filter(a => a.polygon !== polygon);
-        // Remove entregas vinculadas a esta área
+        // Remove entregas vinculadas
         const antes = entregas.length;
         entregas = entregas.filter(en => en.area !== areaName);
         if (antes !== entregas.length) {
@@ -411,19 +411,31 @@
       const raio = 15 + Math.min(40, total*4);
       const ang = (2*Math.PI) * (index/Math.max(1,total));
       const dLat = (raio/111320) * Math.cos(ang);
-      const dLng = (raio/(111320*Math.cos(center.lat()*Math.PI/180))) * Math.sin(ang);
+      const dLng = (raio/(111320*Math.cos(center.lat()*PI/180))) * Math.sin(ang);
       return new google.maps.LatLng(center.lat() + dLat, center.lng() + dLng);
     }
+    const PI = Math.PI; // (micro otimização)
 
     /* ===== Pins / Rota ===== */
     function atualizarPinsEntregas(){
+      // Limpa pins e rota
       entregaMarkers.forEach(m => m.setMap(null));
       entregaMarkers = [];
       if (rotaAnimadaPolyline) { rotaAnimadaPolyline.setMap(null); rotaAnimadaPolyline = null; }
-
       if (!map) return;
 
-      // Agrupar por área p/ deslocar pins
+      // Índice visual apenas para não-entregues
+      const naoEntreguesOrdenadas = entregas
+        .slice()
+        .sort((a,b)=>a.order-b.order)
+        .filter(e => e.status !== STATUS.ENTREGUE);
+
+      const displayIndex = new Map(); // key -> 1..N
+      naoEntreguesOrdenadas.forEach((e,i)=>{
+        displayIndex.set(`${e.placa}|${e.area}`, i+1);
+      });
+
+      // Agrupa por área p/ deslocar pins
       const porArea = {};
       entregas.forEach(e => {
         if(!porArea[e.area]) porArea[e.area] = [];
@@ -434,15 +446,17 @@
         const area = drawnAreas.find(a => a.data.name === areaName);
         if (!area) return;
         const center = getPolygonCenter(area.polygon);
-        const lista = porArea[areaName].sort((a,b)=>a.order-b.order);
+        const lista = porArea[areaName].slice().sort((a,b)=>a.order-b.order);
         lista.forEach((e, i) => {
           const pos = posicaoDeslocada(center, i, lista.length);
           const color = statusColor(e.status);
-          const labelText = (e.status === STATUS.ENTREGUE) ? "✓" : String(e.order);
+          const key = `${e.placa}|${e.area}`;
+          const labelText = (e.status === STATUS.ENTREGUE) ? "✓" : String(displayIndex.get(key) || "");
+
           const marker = new google.maps.Marker({
             position: pos,
             map,
-            title: `#${e.order} • ${e.placa} • ${e.area} • ${e.status}`,
+            title: `${e.status === STATUS.ENTREGUE ? '✓' : '#'+(displayIndex.get(key)||'')} • ${e.placa} • ${e.area} • ${e.status}`,
             icon: {
               path: google.maps.SymbolPath.CIRCLE,
               fillColor: color,
@@ -452,20 +466,20 @@
               scale: 10
             },
             label: { text: labelText, fontSize: "14px", fontWeight: "700" },
-            zIndex: 200 + e.order
+            zIndex: 200 + (displayIndex.get(key) || 0)
           });
           entregaMarkers.push(marker);
         });
       });
 
-      // Rota ligando centros das áreas na ordem atual (inclui entregues; se quiser ignorar entregues é só filtrar)
-      const centrosNaOrdem = entregas
-        .slice().sort((a,b)=>a.order-b.order)
+      // Rota: somente não-entregues
+      const centrosNaOrdem = naoEntreguesOrdenadas
         .map(e => {
           const area = drawnAreas.find(a => a.data.name === e.area);
           return area ? getPolygonCenter(area.polygon) : null;
         })
         .filter(Boolean);
+
       animarPolyline(centrosNaOrdem);
     }
 
@@ -625,6 +639,12 @@
 
     function renderEntregasList(){
       const arr = [...entregas].sort((a,b)=>a.order-b.order);
+
+      // Índice visual só para não-entregues
+      const naoEntregues = arr.filter(e => e.status !== STATUS.ENTREGUE);
+      const idxVisual = new Map();
+      naoEntregues.forEach((e,i)=> idxVisual.set(`${e.placa}|${e.area}`, i+1));
+
       entregasList.innerHTML = '';
       arr.forEach((e) => {
         const li = document.createElement('li');
@@ -632,10 +652,12 @@
         li.draggable = true;
         li.dataset.key = e.placa + '|' + e.area;
 
+        const key = `${e.placa}|${e.area}`;
+        const numero = idxVisual.get(key);
         const pill =
           (e.status === STATUS.ENTREGUE)
           ? `<span class="pill pill-ok">✓</span>`
-          : `<span class="pill">#${e.order}</span>`;
+          : `<span class="pill">#${numero ?? ''}</span>`;
 
         li.innerHTML = `
           <div class="left">
@@ -668,7 +690,6 @@
           if (obj){
             obj.status = select.value;
             saveEntregas();
-            // Re-render para atualizar pílula ✓ e pins
             renderEntregasList();
             atualizarPinsEntregas();
           }
@@ -761,7 +782,7 @@
       <a href="#">Política de Privacidade</a>
       <a href="#">Termos de Uso</a>
     </nav>
-      <span class="versao">Versão <b>V1.2.0</b></span>
+      <span class="versao">Versão <b>V1.3.0</b></span>
     </div>
   </div>
 </footer>

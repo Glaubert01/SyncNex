@@ -57,32 +57,6 @@
     .footer .versao-btn { border: none; outline: none; background: none; font: inherit; color: inherit; cursor: pointer; border-radius: 30px; padding: 4px 16px; transition: background 0.15s; font-size: 1em; margin-left: 12px; display: inline-block; }
     .footer .versao-btn:active, .footer .versao-btn:hover { background: #212638; color: #ffda48; box-shadow: 0 0 4px #0072ce30; }
     .versao-btn b { color: #ffe050;} .versao-btn .vnum { color: #6ca3ff; font-weight: 600;}
-
-    /* ===== Pins numerados como OverlayView (sempre por cima) ===== */
-    .num-pin {
-      position: absolute;
-      left: 0; top: 0;
-      transform: translate(-50%, -50%);
-      pointer-events: none; /* não intercepta cliques */
-      filter: drop-shadow(0 2px 8px rgba(0,0,0,.45));
-      z-index: 999999;
-    }
-    .num-pin .bubble {
-      width: 36px; height: 36px;           /* círculo maior */
-      border-radius: 50%;
-      border: 2px solid #ffffff;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 16px; color: #fff;
-      box-shadow: inset 0 0 0 2px rgba(0,0,0,.15);
-    }
-    .num-pin .bubble.pulse {
-      animation: pinPulse 1s ease-in-out infinite;
-    }
-    @keyframes pinPulse {
-      0%   { transform: scale(1); }
-      50%  { transform: scale(1.25); }
-      100% { transform: scale(1); }
-    }
   </style>
 </head>
 <body>
@@ -123,6 +97,7 @@
     <button id="clearBtn">Limpar Áreas</button>
     <button id="incluirPlacaBtn" style="background:#2969b0; color:#fff;">Incluir Placa</button>
     <button id="gerenciarOrdemBtn" style="background:#5c6bc0; color:#fff;">Gerenciar Entregas</button>
+
     <label title="Usar menor distância entre as paradas (Google otimiza a ordem)">
       <input type="checkbox" id="optimizeChk"> Otimizar rota
     </label>
@@ -170,10 +145,10 @@
   <div class="modal-bg" id="modalVersaoBg">
     <div id="modalVersao">
       <button class="modal-close" onclick="document.getElementById('modalVersaoBg').style.display='none'">&times;</button>
-      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.5.0 (Release date: 13/08/25)</span></h3>
+      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.4.2 (Release date: 13/08/25)</span></h3>
       <ul>
-        <li>Pins numerados como OverlayView (sempre acima das áreas/handles).</li>
-        <li>Círculo maior e pulsação no próximo ponto (#1).</li>
+        <li>Número maior nos pins e pulsação do próximo ponto.</li>
+        <li>Camadas ajustadas: pins acima das geoáreas e da rota.</li>
       </ul>
     </div>
   </div>
@@ -197,18 +172,26 @@
 
     // ENTREGAS
     let entregas = [];
-    // armazenará instâncias de OverlayView (pins)
-    let entregaPins = [];
+    let entregaMarkers = [];
 
     // DIRECTIONS
     let directionsService = null;
     let directionsRenderer = null;
 
-    // Índice visual quando a rota é otimizada
+    // Índice visual quando rota é otimizada
     let visualIndexFromRoute = null;
 
-    // Z-INDEX: ordem das camadas (simbólico; pins vão no floatPane)
-    const Z = { POLYGON: 10, ROUTE: 20 };
+    // Z-INDEX: ordem das camadas
+    const Z = { POLYGON: 10, ROUTE: 20, MARKER: 100000 };
+
+    // PULSE (animação do próximo ponto)
+    let pulseInterval = null;
+    let pulseMarker = null;
+    const BASE_SCALE = 14;     // tamanho base do círculo
+    const PULSE_MIN  = 18;
+    const PULSE_MAX  = 24;
+    const PULSE_STEP = 0.7;
+    const PULSE_MS   = 120;
 
     const STATUS = {
       AGUARDANDO: "Aguardando carregamento",
@@ -218,56 +201,16 @@
     };
     function statusColor(status){
       switch(status){
-        case STATUS.AGUARDANDO: return "#e53935"; // vermelho
-        case STATUS.CARREGADO:  return "#ff9800"; // laranja
-        case STATUS.EM_ROTA:    return "#2196f3"; // azul
-        case STATUS.ENTREGUE:   return "#43a047"; // verde
+        case STATUS.AGUARDANDO: return "#e53935";
+        case STATUS.CARREGADO:  return "#ff9800";
+        case STATUS.EM_ROTA:    return "#2196f3";
+        case STATUS.ENTREGUE:   return "#43a047";
         default: return "#666";
       }
     }
 
     function salvarTipoMapa(tipo){ localStorage.setItem('tipoMapa', tipo); }
     function lerTipoMapa(){ return localStorage.getItem('tipoMapa') || 'roadmap'; }
-
-    /* ===== OverlayView para os pins numerados (floatPane) ===== */
-    class NumberedPin extends google.maps.OverlayView {
-      constructor(position, { text, color = '#2196f3', pulse = false }) {
-        super();
-        this.position = position;
-        this.text = text;
-        this.color = color;
-        this.pulse = pulse;
-        this.div = null;
-      }
-      onAdd() {
-        const div = document.createElement('div');
-        div.className = 'num-pin';
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble' + (this.pulse ? ' pulse' : '');
-        bubble.style.background = this.color;
-        bubble.textContent = this.text;
-        div.appendChild(bubble);
-        this.div = div;
-        this.getPanes().floatPane.appendChild(div); // sempre no topo
-      }
-      draw() {
-        const proj = this.getProjection();
-        if (!proj || !this.div) return;
-        const p = proj.fromLatLngToDivPixel(this.position);
-        this.div.style.left = p.x + 'px';
-        this.div.style.top  = p.y + 'px';
-        // atualiza cor/texto caso tenha mudado
-        const bubble = this.div.firstChild;
-        bubble.style.background = this.color;
-        bubble.textContent = this.text;
-        bubble.className = 'bubble' + (this.pulse ? ' pulse' : '');
-      }
-      onRemove() {
-        if (this.div && this.div.parentNode) this.div.parentNode.removeChild(this.div);
-        this.div = null;
-      }
-      setMap(map) { super.setMap(map); }
-    }
 
     function saveAreasToStorage() {
       const areasData = drawnAreas.map(area => ({
@@ -292,7 +235,7 @@
             strokeWeight: 2,
             editable: true,
             draggable: true,
-            zIndex: Z.POLYGON,
+            zIndex: Z.POLYGON,   // << camada baixa
             map
           });
           handlePolygonComplete(polygon, areaObj.name, areaObj.color, areaObj.parent);
@@ -377,7 +320,7 @@
       let parentName = preParent || findParentArea(polygon);
 
       const areaObj = { polygon, data: { name: areaName, color: areaColor, parent: parentName }, label: null };
-      polygon.setOptions({ fillColor: areaColor, strokeColor: areaColor, zIndex: Z.POLYGON });
+      polygon.setOptions({ fillColor: areaColor, strokeColor: areaColor, zIndex: Z.POLYGON }); // << camada baixa
 
       const label = createLabelForPolygon(polygon, areaObj.data);
       areaObj.label = label;
@@ -433,10 +376,35 @@
       return new google.maps.LatLng(center.lat() + dLat, center.lng() + dLng);
     }
 
+    function clearPulse(){
+      if (pulseInterval){ clearInterval(pulseInterval); pulseInterval = null; }
+      pulseMarker = null;
+    }
+    function startPulse(marker, color){
+      clearPulse();
+      pulseMarker = marker;
+      let scale = PULSE_MIN, dir = +1;
+      pulseInterval = setInterval(()=>{
+        if(!pulseMarker || !pulseMarker.getMap()){ clearPulse(); return; }
+        scale += dir * PULSE_STEP;
+        if (scale >= PULSE_MAX){ scale = PULSE_MAX; dir = -1; }
+        if (scale <= PULSE_MIN){ scale = PULSE_MIN; dir = +1; }
+        pulseMarker.setIcon({
+          path: google.maps.SymbolPath.CIRCLE,
+          fillColor: color,
+          fillOpacity: 1,
+          strokeColor: "#111",
+          strokeWeight: 2,
+          scale: scale
+        });
+      }, PULSE_MS);
+    }
+
     function atualizarPinsEntregas(){
-      // limpar pins (overlays)
-      entregaPins.forEach(p => p.setMap(null));
-      entregaPins = [];
+      // limpar pins e pulsação
+      entregaMarkers.forEach(m => m.setMap(null));
+      entregaMarkers = [];
+      clearPulse();
       visualIndexFromRoute = null;
 
       if (!map) return;
@@ -466,11 +434,28 @@
           const key = `${e.placa}|${e.area}`;
           const idx = displayIndex.get(key) || "";
           const labelText = (e.status === STATUS.ENTREGUE) ? "✓" : String(idx);
-          const pulse = (key === nextKey && e.status !== STATUS.ENTREGUE);
 
-          const pin = new NumberedPin(pos, { text: labelText, color, pulse });
-          pin.setMap(map);
-          entregaPins.push(pin);
+          const marker = new google.maps.Marker({
+            position: pos,
+            map,
+            title: `${e.status === STATUS.ENTREGUE ? '✓' : '#'+(idx||'')} • ${e.placa} • ${e.area} • ${e.status}`,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              fillColor: color,
+              fillOpacity: 1,
+              strokeColor: "#111",
+              strokeWeight: 2,
+              scale: BASE_SCALE
+            },
+            label: { text: labelText, fontSize: "16px", fontWeight: "800", color: "#fff" },
+            optimized: false,                           // respeita zIndex vs overlays
+            zIndex: Z.MARKER + (Number(idx) || 0)       // sempre acima
+          });
+          entregaMarkers.push(marker);
+
+          if (key === nextKey && e.status !== STATUS.ENTREGUE){
+            startPulse(marker, color);
+          }
         });
       });
 
@@ -520,9 +505,10 @@
           visualIndexFromRoute.set(key, i+1);
         });
 
-        // Redesenhar pins com a numeração da rota e pulsar o #1
-        entregaPins.forEach(p => p.setMap(null));
-        entregaPins = [];
+        // Redesenhar pins para usar a numeração da rota e pulsar o #1
+        entregaMarkers.forEach(m => m.setMap(null));
+        entregaMarkers = [];
+        clearPulse();
 
         const nextKey = [...visualIndexFromRoute.entries()].find(([,v])=>v===1)?.[0] || null;
 
@@ -539,11 +525,20 @@
             const key = `${e.placa}|${e.area}`;
             const idx = (visualIndexFromRoute && visualIndexFromRoute.get(key)) || "";
             const labelText = (e.status === STATUS.ENTREGUE) ? "✓" : String(idx);
-            const pulse = (key === nextKey && e.status !== STATUS.ENTREGUE);
 
-            const pin = new NumberedPin(pos, { text: labelText, color, pulse });
-            pin.setMap(map);
-            entregaPins.push(pin);
+            const marker = new google.maps.Marker({
+              position: pos, map,
+              title: `${e.status === STATUS.ENTREGUE ? '✓' : '#'+(idx||'')} • ${e.placa} • ${e.area} • ${e.status}`,
+              icon: { path: google.maps.SymbolPath.CIRCLE, fillColor: color, fillOpacity: 1, strokeColor: "#111", strokeWeight: 2, scale: BASE_SCALE },
+              label: { text: labelText, fontSize: "16px", fontWeight: "800", color: "#fff" },
+              optimized: false,
+              zIndex: Z.MARKER + (Number(idx) || 0)
+            });
+            entregaMarkers.push(marker);
+
+            if (key === nextKey && e.status !== STATUS.ENTREGUE){
+              startPulse(marker, color);
+            }
           });
         });
       });
@@ -602,7 +597,7 @@
           strokeColor: "#e53935",
           strokeOpacity: 0.95,
           strokeWeight: 4,
-          zIndex: Z.ROUTE
+          zIndex: Z.ROUTE               // rota acima dos polígonos
         }
       });
 
@@ -644,7 +639,7 @@
       }
     }
 
-    // ===== Modais =====
+    // Modais
     function openModalPlaca(){
       const select = document.getElementById('areaPlaca');
       const geoareas = drawnAreas.map(a=>a.data.name).sort();
@@ -808,7 +803,7 @@
       <a href="#">Política de Privacidade</a>
       <a href="#">Termos de Uso</a>
     </nav>
-      <span class="versao">Versão <b>V1.5.0</b></span>
+      <span class="versao">Versão <b>V1.4.2</b></span>
     </div>
   </div>
 </footer>

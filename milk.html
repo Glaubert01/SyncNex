@@ -62,9 +62,6 @@
     .modal-close { position:absolute; top:12px; right:18px; font-size:20px; background:none; border:none; color:#b21c1c; cursor:pointer;}
     .modal label {display:block; margin: 10px 0 4px 0; font-weight:500;}
     .modal select, .modal input[type="text"] { width:90%; font-size:1rem; padding:6px 8px;}
-    .solic-table {width:100%; margin-top:16px; border-collapse:collapse;}
-    .solic-table th, .solic-table td { border:1px solid #e1e1e1; padding:6px 8px;}
-    .solic-table th {background:#f3f5fa; color: #000;}
 
     /* Lista arrastável de entregas */
     .drag-list { list-style: none; padding: 0; margin: 8px 0; }
@@ -77,6 +74,7 @@
     .drag-item .left { display: flex; align-items: center; gap: 10px; }
     .handle { font-size: 18px; user-select: none; }
     .pill { background:#eef4ff; border:1px solid #cddfff; padding:2px 8px; border-radius:999px; font-size:.9em; color:#23488b; }
+    .pill-ok { background:#e6f7ec; border:1px solid #bfe7c9; color:#256c30; }
     .danger-btn {
       background:#c32c2c; color:#fff; padding:6px 10px; border:none; border-radius:6px; cursor:pointer;
     }
@@ -119,7 +117,6 @@
         <li><a href="horaextra.html">Horas Extras</a></li>
         <li><a href="kanban.html">Kanban</a></li>
         <li class="menu__item"><a href="mapa.html">Mapa</a></li>
-        <li class="menu__item"><a href="milk.html">Milk Run</a></li>
         <li><a href="mttr.html">MTTR</a></li>
         <li><a href="mtbf.html">MTBF</a></li>
         <li class="menu__item"><a href="organograma.html">Organograma</a></li>
@@ -142,7 +139,7 @@
     <button id="drawAreaBtn">Desenhar Área</button>
     <button id="clearBtn">Limpar Áreas</button>
 
-    <!-- Novos botões para entregas -->
+    <!-- Entregas -->
     <button id="incluirPlacaBtn" style="background:#2969b0; color:#fff;">Incluir Placa</button>
     <button id="gerenciarOrdemBtn" style="background:#5c6bc0; color:#fff;">Gerenciar Entregas</button>
   </div>
@@ -159,6 +156,13 @@
         <input id="placaInput" type="text" placeholder="ABC1D23" required />
         <label>Geoárea</label>
         <select id="areaPlaca" required><option value="">Selecione...</option></select>
+        <label>Status</label>
+        <select id="statusPlaca" required>
+          <option>Aguardando carregamento</option>
+          <option>Carregado</option>
+          <option>Em Rota</option>
+          <option>Entregue</option>
+        </select>
         <div style="margin-top:15px;">
           <button type="submit" class="ok-btn">Salvar</button>
         </div>
@@ -166,9 +170,9 @@
     </div>
   </div>
 
-  <!-- Modal: Gerenciar ordem (drag & drop) -->
+  <!-- Modal: Gerenciar (drag & drop + status) -->
   <div class="modal-bg" id="modalGestao">
-    <div class="modal" style="min-width:480px;">
+    <div class="modal" style="min-width:520px;">
       <button class="modal-close" onclick="closeModalGestao()">&times;</button>
       <h3>Entregas (arraste para reordenar)</h3>
       <ul id="entregasList" class="drag-list"></ul>
@@ -178,16 +182,15 @@
     </div>
   </div>
 
-  <!-- Modal de Versão -->
+  <!-- Modal Versão -->
   <div class="modal-bg" id="modalVersaoBg">
     <div id="modalVersao">
       <button class="modal-close" onclick="document.getElementById('modalVersaoBg').style.display='none'">&times;</button>
-      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.1.0 (Release date: 12/08/25)</span></h3>
+      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.2.0 (Release date: 13/08/25)</span></h3>
       <ul>
-        <li>Placas de entrega vinculadas a geoáreas.</li>
-        <li>Pins numerados por ordem de rota.</li>
-        <li>Lista arrastável para reordenar e atualizar o mapa.</li>
-        <li>Persistência local de geoáreas e entregas.</li>
+        <li>Status por entrega com cores: aguardando (vermelho), carregado (laranja), em rota (azul), entregue (verde).</li>
+        <li>Entregue mostra ✓ em vez de número.</li>
+        <li>Alteração de status também em “Gerenciar Entregas”.</li>
       </ul>
     </div>
   </div>
@@ -205,15 +208,31 @@
 
   <script>
     let map, drawingManager;
-    let drawnAreas = []; // {polygon, label, data{name,color,parent}, btn}
+    let drawnAreas = []; // {polygon, label, data{name,color,parent}}
     let selectedColor = "#2196f3";
     let loadedAreas = false;
 
-    // ENTREGAS (substitui solicitacoes)
-    // { placa: string, area: string, order: number }
+    // ENTREGAS (placas)
+    // { placa: string, area: string, order: number, status: string }
     let entregas = [];
     let entregaMarkers = [];
     let rotaAnimadaPolyline = null;
+
+    const STATUS = {
+      AGUARDANDO: "Aguardando carregamento",
+      CARREGADO: "Carregado",
+      EM_ROTA: "Em Rota",
+      ENTREGUE: "Entregue"
+    };
+    function statusColor(status){
+      switch(status){
+        case STATUS.AGUARDANDO: return "#e53935"; // vermelho
+        case STATUS.CARREGADO:  return "#ff9800"; // laranja
+        case STATUS.EM_ROTA:    return "#2196f3"; // azul
+        case STATUS.ENTREGUE:   return "#43a047"; // verde
+        default: return "#666";
+      }
+    }
 
     /* ===== Persistência tipo de mapa ===== */
     function salvarTipoMapa(tipo){ localStorage.setItem('tipoMapa', tipo); }
@@ -255,8 +274,10 @@
     function loadEntregas(){
       const saved = localStorage.getItem("entregas");
       entregas = saved ? JSON.parse(saved) : [];
-      // Corrige order se necessário
-      entregas.sort((a,b)=>a.order-b.order).forEach((e,i)=>e.order=i+1);
+      entregas.sort((a,b)=>a.order-b.order).forEach((e,i)=>{
+        e.order = i+1;
+        if (!e.status) e.status = STATUS.AGUARDANDO;
+      });
     }
 
     /* ===== Util: centro do polígono ===== */
@@ -334,7 +355,7 @@
       let areaColor = color || selectedColor;
       let parentName = preParent || findParentArea(polygon);
 
-      const areaObj = { polygon, data: { name: areaName, color: areaColor, parent: parentName }, label: null, btn: null };
+      const areaObj = { polygon, data: { name: areaName, color: areaColor, parent: parentName }, label: null };
       polygon.setOptions({ fillColor: areaColor, strokeColor: areaColor });
 
       const label = createLabelForPolygon(polygon, areaObj.data);
@@ -360,7 +381,6 @@
         if(!polygon.getMap()){
           const removedName = areaObj.data.name;
           drawnAreas = drawnAreas.filter(a => a.polygon !== polygon);
-          // Limpa entregas dessa área
           const prev = entregas.length;
           entregas = entregas.filter(e => e.area !== removedName);
           if (prev !== entregas.length) {
@@ -381,32 +401,29 @@
       drawnAreas.forEach(({polygon,label}) => { if(label) label.close(); polygon.setMap(null); });
       drawnAreas = [];
       saveAreasToStorage();
-      // Também limpa entregas (sem área não faz sentido manter)
       entregas = [];
       saveEntregas();
       atualizarPinsEntregas();
     }
 
-    /* ===== Helpers: posicionamento dos pins por área (evita sobreposição) ===== */
+    /* ===== Helpers ===== */
     function posicaoDeslocada(center, index, total){
-      // Distribui em círculo ao redor do centro
-      const raio = 15 + Math.min(40, total*4); // em metros aprox (usaremos delta ~ graus)
+      const raio = 15 + Math.min(40, total*4);
       const ang = (2*Math.PI) * (index/Math.max(1,total));
-      // Conversão simples graus ~ metros (aprox para pequenos deltas)
       const dLat = (raio/111320) * Math.cos(ang);
       const dLng = (raio/(111320*Math.cos(center.lat()*Math.PI/180))) * Math.sin(ang);
       return new google.maps.LatLng(center.lat() + dLat, center.lng() + dLng);
     }
 
-    /* ===== Atualização dos pins de entregas ===== */
+    /* ===== Pins / Rota ===== */
     function atualizarPinsEntregas(){
-      // Remove markers antigos
       entregaMarkers.forEach(m => m.setMap(null));
       entregaMarkers = [];
       if (rotaAnimadaPolyline) { rotaAnimadaPolyline.setMap(null); rotaAnimadaPolyline = null; }
 
       if (!map) return;
-      // Agrupa por área para espaçar pinos
+
+      // Agrupar por área p/ deslocar pins
       const porArea = {};
       entregas.forEach(e => {
         if(!porArea[e.area]) porArea[e.area] = [];
@@ -417,23 +434,33 @@
         const area = drawnAreas.find(a => a.data.name === areaName);
         if (!area) return;
         const center = getPolygonCenter(area.polygon);
-        const lista = porArea[areaName];
+        const lista = porArea[areaName].sort((a,b)=>a.order-b.order);
         lista.forEach((e, i) => {
           const pos = posicaoDeslocada(center, i, lista.length);
+          const color = statusColor(e.status);
+          const labelText = (e.status === STATUS.ENTREGUE) ? "✓" : String(e.order);
           const marker = new google.maps.Marker({
             position: pos,
             map,
-            title: `#${e.order} • Placa ${e.placa} • Área ${e.area}`,
-            label: { text: String(e.order), fontSize: "14px", fontWeight: "700" },
+            title: `#${e.order} • ${e.placa} • ${e.area} • ${e.status}`,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              fillColor: color,
+              fillOpacity: 1,
+              strokeColor: "#333",
+              strokeWeight: 1,
+              scale: 10
+            },
+            label: { text: labelText, fontSize: "14px", fontWeight: "700" },
             zIndex: 200 + e.order
           });
           entregaMarkers.push(marker);
         });
       });
 
-      // Desenho opcional de linha de rota (pela ordem atual, ligando centros das áreas na ordem)
+      // Rota ligando centros das áreas na ordem atual (inclui entregues; se quiser ignorar entregues é só filtrar)
       const centrosNaOrdem = entregas
-        .sort((a,b)=>a.order-b.order)
+        .slice().sort((a,b)=>a.order-b.order)
         .map(e => {
           const area = drawnAreas.find(a => a.data.name === e.area);
           return area ? getPolygonCenter(area.polygon) : null;
@@ -564,6 +591,7 @@
       const geoareas = drawnAreas.map(a=>a.data.name).sort();
       select.innerHTML = '<option value="">Selecione...</option>' + geoareas.map(g=>`<option>${g}</option>`).join('');
       document.getElementById('placaInput').value = '';
+      document.getElementById('statusPlaca').value = STATUS.AGUARDANDO;
       document.getElementById('modalPlaca').style.display = "flex";
     }
     function closeModalPlaca(){ document.getElementById('modalPlaca').style.display = "none"; }
@@ -574,16 +602,16 @@
       e.preventDefault();
       const placa = document.getElementById('placaInput').value.trim().toUpperCase();
       const area = document.getElementById('areaPlaca').value;
+      const status = document.getElementById('statusPlaca').value;
       if(!placa || !area){ alert("Informe placa e geoárea."); return; }
-      // cria nova entrega ao fim
       const order = entregas.length + 1;
-      entregas.push({ placa, area, order });
+      entregas.push({ placa, area, order, status });
       saveEntregas();
       atualizarPinsEntregas();
       closeModalPlaca();
     };
 
-    /* ===== Modal: Gestão (drag & drop) ===== */
+    /* ===== Modal: Gestão (drag & drop + status) ===== */
     const modalGestao = document.getElementById('modalGestao');
     const entregasList = document.getElementById('entregasList');
 
@@ -596,25 +624,56 @@
     document.getElementById('gerenciarOrdemBtn').onclick = openModalGestao;
 
     function renderEntregasList(){
-      // Ordena por order
       const arr = [...entregas].sort((a,b)=>a.order-b.order);
       entregasList.innerHTML = '';
-      arr.forEach((e, idx) => {
+      arr.forEach((e) => {
         const li = document.createElement('li');
         li.className = 'drag-item';
         li.draggable = true;
-        li.dataset.key = e.placa + '|' + e.area; // chave estável simples
+        li.dataset.key = e.placa + '|' + e.area;
+
+        const pill =
+          (e.status === STATUS.ENTREGUE)
+          ? `<span class="pill pill-ok">✓</span>`
+          : `<span class="pill">#${e.order}</span>`;
+
         li.innerHTML = `
           <div class="left">
             <span class="handle">☰</span>
-            <span class="pill">#${e.order}</span>
+            ${pill}
             <div><b>${e.placa}</b> <span style="color:#666">• ${e.area}</span></div>
           </div>
-          <button class="danger-btn" onclick="removerEntrega('${e.placa.replace(/'/g,"\\'")}', '${e.area.replace(/'/g,"\\'")}')">Excluir</button>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <select class="status-select">
+              <option ${e.status===STATUS.AGUARDANDO?'selected':''}>${STATUS.AGUARDANDO}</option>
+              <option ${e.status===STATUS.CARREGADO?'selected':''}>${STATUS.CARREGADO}</option>
+              <option ${e.status===STATUS.EM_ROTA?'selected':''}>${STATUS.EM_ROTA}</option>
+              <option ${e.status===STATUS.ENTREGUE?'selected':''}>${STATUS.ENTREGUE}</option>
+            </select>
+            <button class="danger-btn" onclick="removerEntrega('${e.placa.replace(/'/g,"\\'")}', '${e.area.replace(/'/g,"\\'")}')">Excluir</button>
+          </div>
         `;
         entregasList.appendChild(li);
       });
       wireDragAndDrop();
+      wireStatusChanges();
+    }
+
+    function wireStatusChanges(){
+      entregasList.querySelectorAll('.drag-item').forEach(li=>{
+        const select = li.querySelector('.status-select');
+        select.addEventListener('change', () => {
+          const [placa, area] = li.dataset.key.split('|');
+          const obj = entregas.find(x => x.placa === placa && x.area === area);
+          if (obj){
+            obj.status = select.value;
+            saveEntregas();
+            // Re-render para atualizar pílula ✓ e pins
+            renderEntregasList();
+            atualizarPinsEntregas();
+          }
+        });
+      });
     }
 
     function removerEntrega(placa, area){
@@ -649,7 +708,6 @@
     }
 
     function salvarReordenacao(){
-      // Lê a lista visual e aplica em entregas
       const novos = [];
       entregasList.querySelectorAll('.drag-item').forEach((li, idx)=>{
         const [placa, area] = li.dataset.key.split('|');
@@ -703,9 +761,8 @@
       <a href="#">Política de Privacidade</a>
       <a href="#">Termos de Uso</a>
     </nav>
-      <span class="versao">Versão <b>V1.1.0</b></span>
+      <span class="versao">Versão <b>V1.2.0</b></span>
     </div>
   </div>
 </footer>
 </html>
-

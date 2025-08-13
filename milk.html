@@ -98,7 +98,6 @@
     <button id="incluirPlacaBtn" style="background:#2969b0; color:#fff;">Incluir Placa</button>
     <button id="gerenciarOrdemBtn" style="background:#5c6bc0; color:#fff;">Gerenciar Entregas</button>
 
-    <!-- NOVO: Rotas por ruas -->
     <label title="Usar menor distância entre as paradas (Google otimiza a ordem)">
       <input type="checkbox" id="optimizeChk"> Otimizar rota
     </label>
@@ -130,7 +129,7 @@
     </div>
   </div>
 
-  <!-- Modal: Gerenciar (drag & drop + status) -->
+  <!-- Modal: Gerenciar -->
   <div class="modal-bg" id="modalGestao">
     <div class="modal" style="min-width:520px;">
       <button class="modal-close" onclick="closeModalGestao()">&times;</button>
@@ -146,11 +145,10 @@
   <div class="modal-bg" id="modalVersaoBg">
     <div id="modalVersao">
       <button class="modal-close" onclick="document.getElementById('modalVersaoBg').style.display='none'">&times;</button>
-      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.4.0 (Release date: 13/08/25)</span></h3>
+      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.4.1 (Release date: 13/08/25)</span></h3>
       <ul>
-        <li>Rota pelas ruas com Directions API (exclui entregues).</li>
-        <li>Otimização opcional da ordem (menor distância).</li>
-        <li>Numeração dos pins segue a rota atual (visual).</li>
+        <li>Número maior nos pins.</li>
+        <li>Próxima entrega (#1) com pulsação em destaque.</li>
       </ul>
     </div>
   </div>
@@ -172,17 +170,25 @@
     let selectedColor = "#2196f3";
     let loadedAreas = false;
 
-    // ENTREGAS (placas)
-    // { placa: string, area: string, order: number, status: string }
+    // ENTREGAS
     let entregas = [];
     let entregaMarkers = [];
 
-    // DIRECTIONS (rotas por ruas)
+    // DIRECTIONS
     let directionsService = null;
     let directionsRenderer = null;
 
-    // Índice visual calculado pela rota (quando otimizada)
+    // Índice visual quando a rota é otimizada
     let visualIndexFromRoute = null;
+
+    // PULSE (animação do próximo ponto)
+    let pulseInterval = null;
+    let pulseMarker = null;
+    const BASE_SCALE = 14;     // TAMANHO base do círculo (antes era 10)
+    const PULSE_MIN  = 18;     // escala mínima do pulsante
+    const PULSE_MAX  = 24;     // escala máxima do pulsante
+    const PULSE_STEP = 0.7;    // variação a cada tick
+    const PULSE_MS   = 120;    // intervalo em ms
 
     const STATUS = {
       AGUARDANDO: "Aguardando carregamento",
@@ -192,10 +198,10 @@
     };
     function statusColor(status){
       switch(status){
-        case STATUS.AGUARDANDO: return "#e53935"; // vermelho
-        case STATUS.CARREGADO:  return "#ff9800"; // laranja
-        case STATUS.EM_ROTA:    return "#2196f3"; // azul
-        case STATUS.ENTREGUE:   return "#43a047"; // verde
+        case STATUS.AGUARDANDO: return "#e53935";
+        case STATUS.CARREGADO:  return "#ff9800";
+        case STATUS.EM_ROTA:    return "#2196f3";
+        case STATUS.ENTREGUE:   return "#43a047";
         default: return "#666";
       }
     }
@@ -366,23 +372,50 @@
       return new google.maps.LatLng(center.lat() + dLat, center.lng() + dLng);
     }
 
+    function clearPulse(){
+      if (pulseInterval){ clearInterval(pulseInterval); pulseInterval = null; }
+      pulseMarker = null;
+    }
+    function startPulse(marker, color){
+      clearPulse();
+      pulseMarker = marker;
+      let scale = PULSE_MIN, dir = +1;
+      pulseInterval = setInterval(()=>{
+        if(!pulseMarker || !pulseMarker.getMap()){ clearPulse(); return; }
+        scale += dir * PULSE_STEP;
+        if (scale >= PULSE_MAX){ scale = PULSE_MAX; dir = -1; }
+        if (scale <= PULSE_MIN){ scale = PULSE_MIN; dir = +1; }
+        pulseMarker.setIcon({
+          path: google.maps.SymbolPath.CIRCLE,
+          fillColor: color,
+          fillOpacity: 1,
+          strokeColor: "#111",
+          strokeWeight: 2,
+          scale: scale
+        });
+      }, PULSE_MS);
+    }
+
     function atualizarPinsEntregas(){
-      // limpar pins
+      // limpar pins e pulsação
       entregaMarkers.forEach(m => m.setMap(null));
       entregaMarkers = [];
-      // limpar índice visual de rota (será recalculado em buildRoadRoute)
+      clearPulse();
       visualIndexFromRoute = null;
 
       if (!map) return;
 
-      // base: não-entregues pela ordem salva
       const naoEntreguesOrdenadas = entregas.slice().sort((a,b)=>a.order-b.order).filter(e => e.status !== STATUS.ENTREGUE);
 
-      // numeração visual padrão (sem otimização/antes da rota)
+      // quem é a próxima entrega (sem otimização, ainda)
+      let nextKey = null;
+      if (naoEntreguesOrdenadas.length){
+        nextKey = `${naoEntreguesOrdenadas[0].placa}|${naoEntreguesOrdenadas[0].area}`;
+      }
+
       const displayIndex = new Map();
       naoEntreguesOrdenadas.forEach((e,i)=> displayIndex.set(`${e.placa}|${e.area}`, i+1));
 
-      // Agrupar por área p/ deslocar pins e desenhar
       const porArea = {};
       entregas.forEach(e => { (porArea[e.area] ||= []).push(e); });
 
@@ -395,9 +428,7 @@
           const pos = posicaoDeslocada(center, i, lista.length);
           const color = statusColor(e.status);
           const key = `${e.placa}|${e.area}`;
-
-          // usa índice da rota (se já existir), senão o padrão
-          const idx = (visualIndexFromRoute && visualIndexFromRoute.get(key)) || displayIndex.get(key) || "";
+          const idx = displayIndex.get(key) || "";
           const labelText = (e.status === STATUS.ENTREGUE) ? "✓" : String(idx);
 
           const marker = new google.maps.Marker({
@@ -408,23 +439,26 @@
               path: google.maps.SymbolPath.CIRCLE,
               fillColor: color,
               fillOpacity: 1,
-              strokeColor: "#333",
-              strokeWeight: 1,
-              scale: 10
+              strokeColor: "#111",
+              strokeWeight: 2,
+              scale: BASE_SCALE // TAMANHO base maior
             },
-            label: { text: labelText, fontSize: "14px", fontWeight: "700" },
+            label: { text: labelText, fontSize: "16px", fontWeight: "800", color: "#fff" }, // número maior e branco
             zIndex: 200 + (Number(idx) || 0)
           });
           entregaMarkers.push(marker);
+
+          // PULSE: destacar o próximo (#1) se não for entregue
+          if (key === nextKey && e.status !== STATUS.ENTREGUE){
+            startPulse(marker, color);
+          }
         });
       });
 
-      // constrói rota por ruas
       buildRoadRoute();
     }
 
     function buildRoadRoute(){
-      // apaga rota atual
       if (directionsRenderer) directionsRenderer.set('directions', null);
 
       const optimize = document.getElementById('optimizeChk')?.checked;
@@ -432,21 +466,13 @@
       const naoEntregues = entregas.slice().sort((a,b)=>a.order-b.order).filter(e => e.status !== STATUS.ENTREGUE);
       if (naoEntregues.length < 2) { visualIndexFromRoute = null; return; }
 
-      // centros das áreas
       const pontos = [];
       naoEntregues.forEach(e=>{
         const area = drawnAreas.find(a => a.data.name === e.area);
         if (area) pontos.push({ key: `${e.placa}|${e.area}`, latlng: getPolygonCenter(area.polygon) });
       });
-
       if (pontos.length < 2) { visualIndexFromRoute = null; return; }
-
-      // Limite de 25 pontos por rota (origem+destino+waypoints)
-      if (pontos.length > 25){
-        // fallback: sem rota por ruas (ou poderíamos fatiar em blocos)
-        visualIndexFromRoute = null;
-        return;
-      }
+      if (pontos.length > 25){ visualIndexFromRoute = null; return; }
 
       const origin = pontos[0].latlng;
       const destination = pontos[pontos.length-1].latlng;
@@ -464,9 +490,8 @@
         }
         directionsRenderer.setDirections(result);
 
-        // Monta índice visual pela ordem da rota exibida
         const order = [0];
-        const wpOrder = (result.routes?.[0]?.waypoint_order) || pontos.slice(1,-1).map((_,i)=>i); // identidade
+        const wpOrder = (result.routes?.[0]?.waypoint_order) || pontos.slice(1,-1).map((_,i)=>i);
         wpOrder.forEach(i => order.push(i+1));
         order.push(pontos.length-1);
 
@@ -476,11 +501,13 @@
           visualIndexFromRoute.set(key, i+1);
         });
 
-        // Atualiza pins com a numeração da rota
-        // (não mexe na ordem salva; é só visual)
+        // Redesenhar pins para usar a numeração da rota, e pulsar o #1 da rota
         entregaMarkers.forEach(m => m.setMap(null));
         entregaMarkers = [];
-        // desenha novamente
+        clearPulse();
+
+        const nextKey = [...visualIndexFromRoute.entries()].find(([,v])=>v===1)?.[0] || null;
+
         const porArea = {};
         entregas.forEach(e => { (porArea[e.area] ||= []).push(e); });
         Object.keys(porArea).forEach(areaName => {
@@ -498,11 +525,16 @@
             const marker = new google.maps.Marker({
               position: pos, map,
               title: `${e.status === STATUS.ENTREGUE ? '✓' : '#'+(idx||'')} • ${e.placa} • ${e.area} • ${e.status}`,
-              icon: { path: google.maps.SymbolPath.CIRCLE, fillColor: color, fillOpacity: 1, strokeColor: "#333", strokeWeight: 1, scale: 10 },
-              label: { text: labelText, fontSize: "14px", fontWeight: "700" },
+              icon: { path: google.maps.SymbolPath.CIRCLE, fillColor: color, fillOpacity: 1, strokeColor: "#111", strokeWeight: 2, scale: BASE_SCALE },
+              label: { text: labelText, fontSize: "16px", fontWeight: "800", color: "#fff" },
               zIndex: 200 + (Number(idx) || 0)
             });
             entregaMarkers.push(marker);
+
+            // PULSE: destacar o #1 da rota
+            if (key === nextKey && e.status !== STATUS.ENTREGUE){
+              startPulse(marker, color);
+            }
           });
         });
       });
@@ -531,7 +563,6 @@
       });
       document.querySelector('.color-circle[data-color="#2196f3"]').classList.add('selected');
 
-      // Recalcular rota quando alternar otimização
       document.getElementById('optimizeChk').addEventListener('change', buildRoadRoute);
     });
 
@@ -558,11 +589,7 @@
       directionsRenderer = new google.maps.DirectionsRenderer({
         map,
         suppressMarkers: true,
-        polylineOptions: {
-          strokeColor: "#e53935",
-          strokeOpacity: 0.95,
-          strokeWeight: 4
-        }
+        polylineOptions: { strokeColor: "#e53935", strokeOpacity: 0.95, strokeWeight: 4 }
       });
 
       document.querySelectorAll('.color-circle, #customColor').forEach(el => {
@@ -603,7 +630,7 @@
       }
     }
 
-    // ===== Modais: Placa =====
+    // Modais
     function openModalPlaca(){
       const select = document.getElementById('areaPlaca');
       const geoareas = drawnAreas.map(a=>a.data.name).sort();
@@ -613,7 +640,6 @@
       document.getElementById('modalPlaca').style.display = "flex";
     }
     function closeModalPlaca(){ document.getElementById('modalPlaca').style.display = "none"; }
-
     document.getElementById('incluirPlacaBtn').onclick = openModalPlaca;
 
     document.getElementById('placaForm').onsubmit = function(e){
@@ -629,16 +655,11 @@
       closeModalPlaca();
     };
 
-    // ===== Modal: Gestão (drag & drop + status) =====
     const modalGestao = document.getElementById('modalGestao');
     const entregasList = document.getElementById('entregasList');
 
-    function openModalGestao(){
-      renderEntregasList();
-      modalGestao.style.display = 'flex';
-    }
+    function openModalGestao(){ renderEntregasList(); modalGestao.style.display = 'flex'; }
     function closeModalGestao(){ modalGestao.style.display = 'none'; }
-
     document.getElementById('gerenciarOrdemBtn').onclick = openModalGestao;
 
     function renderEntregasList(){
@@ -654,7 +675,6 @@
         li.draggable = true;
         li.dataset.key = e.placa + '|' + e.area;
 
-        // se já tiver visualIndexFromRoute (rota otimizada), use-o; senão use idxVisual padrão
         const key = `${e.placa}|${e.area}`;
         const numero = (visualIndexFromRoute && visualIndexFromRoute.get(key)) ?? idxVisual.get(key);
 
@@ -754,7 +774,7 @@
     });
   </script>
 
-  <!-- Google Maps (habilite também a Directions API no console do Google) -->
+  <!-- Google Maps -->
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing,geometry&callback=initMap" async defer></script>
 
   <script src="darkmode.js"></script>
@@ -774,7 +794,7 @@
       <a href="#">Política de Privacidade</a>
       <a href="#">Termos de Uso</a>
     </nav>
-      <span class="versao">Versão <b>V1.4.0</b></span>
+      <span class="versao">Versão <b>V1.4.1</b></span>
     </div>
   </div>
 </footer>

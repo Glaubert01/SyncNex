@@ -11,16 +11,23 @@
       --line:#2a5f8a;
       --line-dark:#7fb3ff;
     }
+
     /* Área do organograma */
     .org-wrapper{
       padding:12px;
-      overflow-x:hidden;   /* evita barra horizontal */
+      overflow-x:hidden;   /* nunca mostra rolagem horizontal */
       max-width:100%;
     }
-    /* Caixa que recebe o scale-to-fit */
+    /* Contêiner externo que recebe largura visual para centralizar o scale */
+    .fitouter{
+      margin:0 auto;           /* centraliza visualmente */
+      width:max-content;       /* será ajustado via JS para largura visual */
+    }
+    /* Caixa que é escalada */
     .fitbox{
-      transform-origin: top center;
-      display:inline-block;
+      transform-origin: top left;     /* evita “corte” em lados */
+      display:block;
+      width:max-content;              /* fica com a largura natural para medição */
     }
 
     .org-root{display:flex;flex-direction:column;align-items:center;gap:22px}
@@ -52,13 +59,13 @@
     .stack{display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:8px}
     .stack .connector-v{height:18px}
 
-    /* Linha horizontal entre níveis (decorativa) */
+    /* Linha horizontal (decorativa) */
     .rail{ width:100%; height:6px; background:var(--line); border-radius:4px; opacity:.45; }
 
-    /* Pessoas: uma ÚNICA linha (nowrap); o fitbox trata de escalar para caber */
+    /* Pessoas SEMPRE em uma única linha (nowrap) */
     .people-row{
       display:flex; flex-wrap:nowrap; gap:32px; justify-content:center; align-items:flex-start;
-      width:100%;
+      width:max-content;                 /* largura natural para medição */
     }
     .person-col{display:flex; flex-direction:column; align-items:center; padding:0 4px}
 
@@ -105,7 +112,7 @@
       <h2 class="titulo">Organograma de Atividades Staffs GIL</h2>
 
       <div id="organograma" class="org-wrapper">
-        <!-- o JS injeta .fitbox aqui -->
+        <!-- JS injeta .fitouter > .fitbox aqui -->
       </div>
 
       <div class="controls">
@@ -140,7 +147,11 @@
       const wrapper = document.getElementById("organograma");
       wrapper.innerHTML = "";
 
-      // Fitbox para permitir escala
+      // Contêiner externo e a caixa escalável
+      const outer = document.createElement("div");
+      outer.id = "fitouter";
+      outer.className = "fitouter";
+
       const fitbox = document.createElement("div");
       fitbox.id = "fitbox";
       fitbox.className = "fitbox";
@@ -186,7 +197,7 @@
         // Conector pessoa->pilares
         col.appendChild(connectorV(24));
 
-        // Pilha vertical de pilares (colapsável)
+        // Pilha de pilares (colapsável)
         const pilhaWrap = document.createElement("div");
         pilhaWrap.className = "collapse";
 
@@ -235,18 +246,15 @@
 
       root.appendChild(row);
       fitbox.appendChild(root);
-      wrapper.appendChild(fitbox);
+      outer.appendChild(fitbox);
+      wrapper.appendChild(outer);
 
-      // aplica scale-to-fit sem rolagem horizontal
+      // aplica scale-to-fit centralizado (sem corte)
       requestAnimationFrame(fitToWidth);
     }
 
     // ---- Funções auxiliares de UI ----
-    function rail(){
-      const r = document.createElement("div");
-      r.className = "rail";
-      return r;
-    }
+    function rail(){ const r=document.createElement("div"); r.className="rail"; return r; }
     function connectorV(h){
       const v = document.createElement("div");
       v.className = "connector-v";
@@ -254,25 +262,28 @@
       return v;
     }
 
-    // Ajusta a escala horizontal para que TODAS as pessoas caibam na mesma linha
+    // Ajusta a escala para que TODAS as pessoas caibam em uma única linha,
+    // mantendo o conteúdo centralizado e sem cortes.
     function fitToWidth(){
       const wrapper = document.getElementById("organograma");
       const fitbox = document.getElementById("fitbox");
-      if(!wrapper || !fitbox) return;
+      const outer  = document.getElementById("fitouter");
+      if(!wrapper || !fitbox || !outer) return;
 
       // reseta para medir largura "natural"
       fitbox.style.transform = "scale(1)";
-      fitbox.style.width = "auto";
-
-      const wrapperW = wrapper.clientWidth;
       const naturalW = fitbox.scrollWidth;
+      const wrapperW = wrapper.clientWidth;
 
       // margem de segurança 24px
       const scale = Math.min(1, (wrapperW - 24) / naturalW);
 
+      // Aplica escala
       fitbox.style.transform = `scale(${scale})`;
-      // fixa largura natural para evitar reflow após o scale
-      fitbox.style.width = naturalW + "px";
+
+      // Define largura visual do contêiner externo para centralizar corretamente
+      const visualW = Math.max(0, Math.floor(naturalW * scale));
+      outer.style.width = visualW + "px";
     }
 
     // ------- Atualizações de estado -------

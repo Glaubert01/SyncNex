@@ -4,104 +4,76 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SyncNex - CSN</title>
-  <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="assets/syncnex-favicon.png">
   <style>
     html, body { height: 100%; margin: 0; padding: 0; font-family: Roboto, Arial, sans-serif; }
     #map { width: 100vw; height: 100vh; position: absolute; left: 200px; top: 0; z-index: 1; }
-    .custom-controls {
-      position: absolute; top: 10px; left: 500px; z-index: 5; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
-    }
+    .custom-controls { position: absolute; top: 10px; left: 500px; z-index: 5; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     .custom-controls button, .custom-controls input[type="color"], .custom-controls label {
-      padding: 8px 13px; background: #fff; border: 1px solid #ddd; border-radius: 4px;
-      font-size: 1rem; cursor: pointer; font-weight: bold; box-shadow: 0 2px 6px #0001;
-      transition: background .2s;
+      padding: 8px 12px; background: #fff; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 6px #0001;
     }
-    .custom-controls label { display:flex; align-items:center; gap:8px; font-weight:500; cursor: pointer; }
-    .custom-controls input[type="checkbox"]{ transform: scale(1.2); cursor:pointer; }
-    .custom-controls button.active, .custom-controls button:hover { background: #e8e8e8; }
+    .custom-controls button.active, .custom-controls button:hover { background: #ececec; }
     .color-picker { display: flex; align-items: center; gap: 4px; }
-    .color-circle { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #ddd; cursor: pointer; margin-right: 2px; display: inline-block; }
+    .color-circle { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #ddd; cursor: pointer; display: inline-block; }
     .color-circle.selected { border: 3px solid #2196f3; }
-    .timer-bar { position: fixed; right: 0; top: 0; font-size: 14px; color: #444; z-index: 10; background: #fafafadb; padding: 2px 8px; border-radius: 0 0 8px 8px; border-bottom: 1px solid #ddd; }
-    .custom-label-box { background: #fff; border-radius: 12px; padding: 6px 16px 14px 16px; box-shadow: 0 2px 10px #0002; border: 1px solid #eee; position: relative; min-width: 80px; display: flex; flex-direction: column; align-items: center; font-size: 1rem; }
-    .custom-label-box .delete-area-btn { position: absolute; top: 2px; right: 7px; color: #b21c1c; background: transparent; border: none; font-size: 22px; cursor: pointer; font-weight: bold; }
-    .custom-label-box .area-title { margin-top: 8px; margin-bottom: 3px; font-size: 1.05rem; font-weight: 600; background: #e9f7fa; padding: 3px 10px; border-radius: 6px; border: 1px solid #b8d0db; color: #118; display: inline-block; }
-    .custom-label-box .area-parent { font-size: 0.9em; color: #757575; margin-top: 2px; }
-    .footer { position: fixed; left: 0; bottom: 0; width: 100vw; z-index: 99; background: rgba(10,16,30,0.94); box-shadow: 0 -4px 24px #0003; color: #fff; }
-    .sidebar { z-index: 20; display: block !important; }
-
-    .modal-bg { display:none; position:fixed; z-index:1001; left:0;top:0;width:100vw;height:100vh; background:rgba(0,0,0,0.24); align-items:center; justify-content:center; }
-    .modal { background: #fff; border-radius: 10px; padding: 24px 20px 20px 20px; min-width:340px; box-shadow: 0 8px 40px #0005; position:relative; color: #000; max-height: 80vh; overflow:auto; }
+    .custom-label-box {
+      background: #fff; border-radius: 12px; padding: 6px 16px 14px 16px; box-shadow: 0 2px 10px #0002; border: 1px solid #eee;
+      position: relative; min-width: 80px; display: flex; flex-direction: column; align-items: center; font-size: 1rem;
+    }
+    .custom-label-box .delete-area-btn { position: absolute; top: 2px; right: 7px; color: #b21c1c; background: transparent; border: none; font-size: 20px; cursor: pointer; }
+    .custom-label-box .area-title { margin: 8px 0 3px 0; font-weight: 600; background: #e9f7fa; padding: 3px 10px; border-radius: 6px; border: 1px solid #b8d0db; color: #118; }
+    .custom-label-box .area-parent { font-size: 12px; color: #757575; margin-top: 2px; }
+    .modal-bg { display:none; position:fixed; z-index:1001; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.24); align-items:center; justify-content:center; }
+    .modal { background:#fff; border-radius:10px; padding:22px 18px; min-width:340px; box-shadow:0 8px 40px #0005; position:relative; color:#000; max-height:80vh; overflow:auto; }
     .modal h3 { margin-top:0; }
-    .modal-close { position:absolute; top:12px; right:18px; font-size:20px; background:none; border:none; color:#b21c1c; cursor:pointer;}
-    .modal label {display:block; margin: 10px 0 4px 0; font-weight:500;}
-    .modal select, .modal input[type="text"] { width:90%; font-size:1rem; padding:6px 8px;}
-
-    .drag-list { list-style: none; padding: 0; margin: 8px 0; }
-    .drag-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid #e1e1e1; border-radius: 8px; background: #fff; margin-bottom: 8px; cursor: grab; }
-    .drag-item:active { cursor: grabbing; }
-    .drag-item .left { display: flex; align-items: center; gap: 10px; }
-    .handle { font-size: 18px; user-select: none; }
+    .modal-close { position:absolute; top:10px; right:14px; font-size:20px; background:none; border:none; color:#b21c1c; cursor:pointer; }
+    .modal label { display:block; margin:10px 0 4px; font-weight:500; }
+    .modal select, .modal input[type="text"] { width:90%; font-size:1rem; padding:6px 8px; }
+    .drag-list { list-style:none; padding:0; margin:8px 0; }
+    .drag-item { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid #e1e1e1; border-radius:8px; background:#fff; margin-bottom:8px; cursor:grab; }
+    .drag-item .left { display:flex; align-items:center; gap:10px; }
+    .handle { font-size:18px; user-select:none; }
     .pill { background:#eef4ff; border:1px solid #cddfff; padding:2px 8px; border-radius:999px; font-size:.9em; color:#23488b; }
     .pill-ok { background:#e6f7ec; border:1px solid #bfe7c9; color:#256c30; }
     .danger-btn { background:#c32c2c; color:#fff; padding:6px 10px; border:none; border-radius:6px; cursor:pointer; }
     .ok-btn { background:#2196f3; color:#fff; padding:8px 18px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; }
-
-    #modalVersaoBg { display:none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.24); align-items: center; justify-content: center; }
-    #modalVersao { background: #fff; border-radius: 10px; padding: 26px 28px 20px 28px; min-width:340px; box-shadow: 0 8px 40px #0005; position: relative; color: #222; animation: fadeIn .18s; max-width: 94vw; }
-    #modalVersao h3 { margin-top:0; color: #23488b; font-size: 1.25em;}
-    #modalVersao ul { margin-top: 10px; padding-left: 22px; font-size: 1.04em;}
-    #modalVersao .modal-close { position: absolute; top: 10px; right: 14px; font-size: 23px; background: none; border: none; color: #b21c1c; cursor: pointer;}
-    @keyframes fadeIn { from { opacity: 0; transform: scale(0.96);} to { opacity: 1; transform: scale(1);} }
-    .footer .versao-btn { border: none; outline: none; background: none; font: inherit; color: inherit; cursor: pointer; border-radius: 30px; padding: 4px 16px; transition: background 0.15s; font-size: 1em; margin-left: 12px; display: inline-block; }
-    .footer .versao-btn:active, .footer .versao-btn:hover { background: #212638; color: #ffda48; box-shadow: 0 0 4px #0072ce30; }
-    .versao-btn b { color: #ffe050;} .versao-btn .vnum { color: #6ca3ff; font-weight: 600;}
+    .timer-bar { position: fixed; right: 0; top: 0; font-size: 14px; color: #444; z-index: 10; background: #fafafadb; padding: 2px 8px; border-radius: 0 0 8px 8px; border-bottom: 1px solid #ddd; }
+    .sidebar { position: absolute; left: 0; top: 0; width: 200px; height: 100vh; background: #0a1020f0; color: #fff; z-index: 20; }
+    .sidebar .logo-csn { width: 160px; display:block; margin:14px auto; }
+    .sidebar .menu { list-style:none; padding:0 14px; }
+    .sidebar .menu li a{ color:#cdd7ff; text-decoration:none; display:block; padding:6px 0; }
+    .footer { position: fixed; left: 0; bottom: 0; width: 100vw; z-index: 99; background: rgba(10,16,30,0.94); color: #fff; }
   </style>
 </head>
 <body>
-  <button id="toggle-mode" class="darkmode-btn" title="Alternar modo escuro">🌓</button>
-  <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu">&#9776;</button>
-  <div class="container">
-    <aside class="sidebar" id="sidebar">
-      <a href="index.html"><img src="/assets/logo-csn.png" alt="Logo CSN" class="logo-csn" /></a>
-      <ul class="menu">
-        <li><a href="absenteismo.html">Absenteismo</a></li>
-        <li><a href="contratos.html">Contratos</a></li>
-        <li><a href="dgfm.html">DGFM</a></li>
-        <li><a href="diesel.html">Diesel</a></li>
-        <li><a href="efetivo.html">Efetivo</a></li>
-        <li><a href="horaextra.html">Horas Extras</a></li>
-        <li><a href="kanban.html">Kanban</a></li>
-        <li class="menu__item"><a href="mapa.html">Mapa</a></li>
-        <li><a href="mttr.html">MTTR</a></li>
-        <li><a href="mtbf.html">MTBF</a></li>
-        <li class="menu__item"><a href="organograma.html">Organograma</a></li>
-        <li><a href="projetos.html">Projetos</a></li>
-        <li><a href="sobressalentes.html">Sobressalentes</a></li>
-      </ul>
-    </aside>
+  <div class="sidebar">
+    <img src="/assets/logo-csn.png" class="logo-csn" alt="Logo" />
+    <ul class="menu">
+      <li><a href="#">Mapa</a></li>
+      <!-- demais itens… -->
+    </ul>
   </div>
 
-  <div class="timer-bar" id="timerBar">Próxima atualização em: <span id="timerValue">01:00</span></div>
+  <div class="timer-bar">Próxima atualização em: <span id="timerValue">01:00</span></div>
 
   <div class="custom-controls">
-    <div class="color-picker" title="Escolher cor da área">
-      <div class="color-circle" data-color="#2196f3" style="background:#2196f3;"></div>
-      <div class="color-circle" data-color="#43a047" style="background:#43a047;"></div>
-      <div class="color-circle" data-color="#ff9800" style="background:#ff9800;"></div>
-      <div class="color-circle" data-color="#e53935" style="background:#e53935;"></div>
+    <div class="color-picker" title="Cor da área">
+      <span class="color-circle" data-color="#2196f3" style="background:#2196f3;"></span>
+      <span class="color-circle" data-color="#43a047" style="background:#43a047;"></span>
+      <span class="color-circle" data-color="#ff9800" style="background:#ff9800;"></span>
+      <span class="color-circle" data-color="#e53935" style="background:#e53935;"></span>
       <input type="color" id="customColor" value="#2196f3" style="width:34px;height:26px;">
     </div>
     <button id="drawAreaBtn">Desenhar Área</button>
-    <button id="clearBtn">Limpar Áreas</button>
+    <button id="clearAreasBtn">Limpar Áreas</button>
+
+    <!-- Ruas internas -->
+    <button id="drawRoadBtn">Desenhar Rua</button>
+    <button id="clearRoadsBtn">Limpar Ruas</button>
+
+    <!-- Entregas -->
     <button id="incluirPlacaBtn" style="background:#2969b0; color:#fff;">Incluir Placa</button>
     <button id="gerenciarOrdemBtn" style="background:#5c6bc0; color:#fff;">Gerenciar Entregas</button>
-
-    <!-- NOVO: Rotas por ruas -->
-    <label title="Usar menor distância entre as paradas (Google otimiza a ordem)">
-      <input type="checkbox" id="optimizeChk"> Otimizar rota
-    </label>
   </div>
 
   <div id="map"></div>
@@ -130,7 +102,7 @@
     </div>
   </div>
 
-  <!-- Modal: Gerenciar (drag & drop + status) -->
+  <!-- Modal: Gerenciar -->
   <div class="modal-bg" id="modalGestao">
     <div class="modal" style="min-width:520px;">
       <button class="modal-close" onclick="closeModalGestao()">&times;</button>
@@ -142,47 +114,29 @@
     </div>
   </div>
 
-  <!-- Modal Versão -->
-  <div class="modal-bg" id="modalVersaoBg">
-    <div id="modalVersao">
-      <button class="modal-close" onclick="document.getElementById('modalVersaoBg').style.display='none'">&times;</button>
-      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.4.0 (Release date: 13/08/25)</span></h3>
-      <ul>
-        <li>Rota pelas ruas com Directions API (exclui entregues).</li>
-        <li>Otimização opcional da ordem (menor distância).</li>
-        <li>Numeração dos pins segue a rota atual (visual).</li>
-      </ul>
-    </div>
-  </div>
-
   <script>
-    // Timer
+    // ===== Timer
     let seconds = 60;
-    function updateTimer() {
+    (function updateTimer(){
       document.getElementById('timerValue').textContent = seconds < 10 ? `00:0${seconds}` : `00:${seconds}`;
       seconds = seconds > 0 ? seconds - 1 : 60;
       setTimeout(updateTimer, 1000);
-    }
-    updateTimer();
+    })();
   </script>
 
   <script>
+    // ====== Estado
     let map, drawingManager;
-    let drawnAreas = []; // {polygon, label, data{name,color,parent}}
     let selectedColor = "#2196f3";
-    let loadedAreas = false;
-
-    // ENTREGAS (placas)
-    // { placa: string, area: string, order: number, status: string }
-    let entregas = [];
+    let drawnAreas = [];     // {polygon, label, data{name,color,parent}}
+    let roads = [];          // [{polyline, path:[{lat,lng}]}]
+    let roadGraph = null;    // {nodes: Map(id->{lat,lng}), adj: Map(id->[{to, w}])}
     let entregaMarkers = [];
+    let routePolyline = null;
 
-    // DIRECTIONS (rotas por ruas)
-    let directionsService = null;
-    let directionsRenderer = null;
-
-    // Índice visual calculado pela rota (quando otimizada)
-    let visualIndexFromRoute = null;
+    // ENTREGAS
+    // { placa, area, order, status }
+    let entregas = [];
 
     const STATUS = {
       AGUARDANDO: "Aguardando carregamento",
@@ -190,478 +144,304 @@
       EM_ROTA: "Em Rota",
       ENTREGUE: "Entregue"
     };
-    function statusColor(status){
-      switch(status){
-        case STATUS.AGUARDANDO: return "#e53935"; // vermelho
-        case STATUS.CARREGADO:  return "#ff9800"; // laranja
-        case STATUS.EM_ROTA:    return "#2196f3"; // azul
-        case STATUS.ENTREGUE:   return "#43a047"; // verde
-        default: return "#666";
-      }
-    }
+    const PI = Math.PI;
 
-    function salvarTipoMapa(tipo){ localStorage.setItem('tipoMapa', tipo); }
-    function lerTipoMapa(){ return localStorage.getItem('tipoMapa') || 'roadmap'; }
-
-    function saveAreasToStorage() {
-      const areasData = drawnAreas.map(area => ({
-        path: area.polygon.getPath().getArray().map(ll => ({lat: ll.lat(), lng: ll.lng()})),
-        color: area.data.color,
-        name: area.data.name,
-        parent: area.data.parent || null
-      }));
-      localStorage.setItem("geoareas", JSON.stringify(areasData));
-    }
-    function loadAreasFromStorage() {
-      const saved = localStorage.getItem("geoareas");
-      if (!saved) return;
-      try {
-        const data = JSON.parse(saved);
-        data.forEach(areaObj => {
-          const polygon = new google.maps.Polygon({
-            paths: areaObj.path,
-            fillColor: areaObj.color,
-            strokeColor: areaObj.color,
-            fillOpacity: 0.18,
-            strokeWeight: 2,
-            editable: true,
-            draggable: true,
-            map
-          });
-          handlePolygonComplete(polygon, areaObj.name, areaObj.color, areaObj.parent);
+    // ===== Persistência
+    function saveAreas(){ localStorage.setItem("geoareas", JSON.stringify(drawnAreas.map(a=>({
+      path: a.polygon.getPath().getArray().map(ll=>({lat:ll.lat(),lng:ll.lng()})),
+      color: a.data.color, name: a.data.name, parent: a.data.parent||null
+    })))); }
+    function loadAreas(){
+      const raw = localStorage.getItem("geoareas"); if(!raw) return;
+      JSON.parse(raw).forEach(obj=>{
+        const poly = new google.maps.Polygon({
+          paths: obj.path, fillColor: obj.color, strokeColor: obj.color, fillOpacity: .18, strokeWeight: 2,
+          editable:true, draggable:true, map
         });
-      } catch(e) { console.warn('Erro carregando áreas salvas', e); }
+        handlePolygonComplete(poly, obj.name, obj.color, obj.parent);
+      });
     }
-
+    function saveRoads(){
+      const data = roads.map(r=>r.polyline.getPath().getArray().map(ll=>({lat:ll.lat(),lng:ll.lng()})));
+      localStorage.setItem("ruas", JSON.stringify(data));
+    }
+    function loadRoads(){
+      const raw = localStorage.getItem("ruas"); if(!raw) return;
+      JSON.parse(raw).forEach(path=>{
+        const polyline = new google.maps.Polyline({
+          path, strokeColor:"#ff1744", strokeWeight:3, strokeOpacity:0.9, editable:true, map
+        });
+        hookRoadPolyline(polyline);
+        roads.push({polyline});
+      });
+      rebuildRoadGraph();
+    }
     function saveEntregas(){ localStorage.setItem("entregas", JSON.stringify(entregas)); }
     function loadEntregas(){
-      const saved = localStorage.getItem("entregas");
-      entregas = saved ? JSON.parse(saved) : [];
-      entregas.sort((a,b)=>a.order-b.order).forEach((e,i)=>{
-        e.order = i+1;
-        if (!e.status) e.status = STATUS.AGUARDANDO;
+      const raw = localStorage.getItem("entregas");
+      entregas = raw ? JSON.parse(raw) : [];
+      entregas.sort((a,b)=>a.order-b.order).forEach((e,i)=>{ e.order=i+1; if(!e.status) e.status=STATUS.AGUARDANDO; });
+    }
+
+    // ===== Util
+    function setPolygonColor(color){
+      selectedColor = color;
+      if (drawingManager) {
+        drawingManager.setOptions({ polygonOptions: {editable:true,draggable:true,strokeColor:color,fillColor:color,fillOpacity:.18,strokeWeight:2}});
+      }
+    }
+    document.addEventListener('DOMContentLoaded',()=>{
+      document.querySelectorAll('.color-circle').forEach(c=>{
+        c.onclick=()=>{ document.querySelectorAll('.color-circle').forEach(x=>x.classList.remove('selected')); c.classList.add('selected'); setPolygonColor(c.dataset.color); }
       });
+      document.getElementById('customColor').addEventListener('input',e=>{
+        document.querySelectorAll('.color-circle').forEach(x=>x.classList.remove('selected')); setPolygonColor(e.target.value);
+      });
+      document.querySelector('.color-circle[data-color="#2196f3"]').classList.add('selected');
+    });
+
+    function getPolygonCenter(poly){
+      const b = new google.maps.LatLngBounds();
+      poly.getPath().forEach(ll=>b.extend(ll));
+      return b.getCenter();
+    }
+    function haversine(a,b){
+      const R=6371000, dLat=(b.lat-a.lat)*PI/180, dLng=(b.lng-a.lng)*PI/180;
+      const s1=Math.sin(dLat/2), s2=Math.sin(dLng/2);
+      const q=s1*s1 + Math.cos(a.lat*PI/180)*Math.cos(b.lat*PI/180)*s2*s2;
+      return 2*R*Math.asin(Math.min(1,Math.sqrt(q)));
+    }
+    function posicaoDeslocada(center, i, n){
+      const raio = 15 + Math.min(40, n*4);
+      const ang = (2*PI) * (i / Math.max(1,n));
+      const cosLat = Math.cos(center.lat()*PI/180); const safe = Math.abs(cosLat)<1e-6?1e-6:cosLat;
+      const dLat = (raio/111320) * Math.cos(ang); const dLng = (raio/(111320*safe)) * Math.sin(ang);
+      return new google.maps.LatLng(center.lat()+dLat, center.lng()+dLng);
     }
 
-    function getPolygonCenter(poly) {
-      const path = poly.getPath().getArray();
-      const bounds = new google.maps.LatLngBounds();
-      path.forEach(ll=>bounds.extend(ll));
-      return bounds.getCenter();
-    }
-
-    function closeAllLabels(){ drawnAreas.forEach(({label})=>{ if(label) label.close(); }); }
-
-    function createLabelForPolygon(polygon, areaObj) {
+    // ===== Áreas
+    function closeAllLabels(){ drawnAreas.forEach(({label})=>label&&label.close()); }
+    function createLabelForPolygon(polygon, areaObj){
       const center = getPolygonCenter(polygon);
-      const content = document.createElement('div');
-      content.className = 'custom-label-box';
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = "delete-area-btn";
-      deleteBtn.innerHTML = "&#10005;";
-      deleteBtn.title = "Excluir área";
-      deleteBtn.onclick = function(e) {
-        e.stopPropagation();
-        const areaName = areaObj.name;
-        polygon.setMap(null);
-        drawnAreas = drawnAreas.filter(a => a.polygon !== polygon);
-        const antes = entregas.length;
-        entregas = entregas.filter(en => en.area !== areaName);
-        if (antes !== entregas.length) { renumerarEntregas(); saveEntregas(); }
-        saveAreasToStorage();
-        setTimeout(atualizarPinsEntregas,100);
+      const content = document.createElement('div'); content.className='custom-label-box';
+      const del = document.createElement('button'); del.className='delete-area-btn'; del.innerHTML='&times;'; del.title="Excluir área";
+      del.onclick=(e)=>{ e.stopPropagation(); const name=areaObj.name; polygon.setMap(null); drawnAreas=drawnAreas.filter(a=>a.polygon!==polygon);
+        // apaga entregas da área
+        const before=entregas.length; entregas=entregas.filter(x=>x.area!==name); if(before!==entregas.length){ renumerar(); saveEntregas(); }
+        saveAreas(); atualizarPinsERota();
       };
-      content.appendChild(deleteBtn);
-
-      const nameDiv = document.createElement('div');
-      nameDiv.className = 'area-title';
-      nameDiv.textContent = areaObj.name || "(sem nome)";
-      content.appendChild(nameDiv);
-
-      if (areaObj.parent) {
-        const parentDiv = document.createElement('div');
-        parentDiv.className = "area-parent";
-        parentDiv.textContent = "Vínculo: " + areaObj.parent;
-        content.appendChild(parentDiv);
-      }
-
-      const infowindow = new google.maps.InfoWindow({ content, position: center, pixelOffset: new google.maps.Size(0,-8) });
-      return infowindow;
+      content.appendChild(del);
+      const title=document.createElement('div'); title.className='area-title'; title.textContent=areaObj.name||'(sem nome)'; content.appendChild(title);
+      if(areaObj.parent){ const p=document.createElement('div'); p.className='area-parent'; p.textContent='Vínculo: '+areaObj.parent; content.appendChild(p); }
+      return new google.maps.InfoWindow({content, position:center, pixelOffset:new google.maps.Size(0,-8)});
     }
-
-    function findParentArea(polygon) {
-      const childPath = polygon.getPath().getArray();
-      let parentName = null;
-      drawnAreas.forEach(area => {
-        if (area.polygon !== polygon) {
-          const parentPoly = area.polygon;
-          if (childPath.every(ll => google.maps.geometry.poly.containsLocation(ll, parentPoly))) {
-            parentName = area.data.name;
-          }
+    function findParentArea(polygon){
+      const child = polygon.getPath().getArray();
+      let parent=null;
+      drawnAreas.forEach(a=>{
+        if(a.polygon!==polygon){
+          if(child.every(ll=>google.maps.geometry.poly.containsLocation(ll, a.polygon))) parent=a.data.name;
         }
       });
-      return parentName;
+      return parent;
     }
-
-    function handlePolygonComplete(polygon, preName, color, preParent) {
-      let areaName = preName || prompt("Nome da Área:", "") || "Área " + (drawnAreas.length+1);
+    function handlePolygonComplete(polygon, preName, color, preParent){
+      let name = preName || prompt("Nome da Área:", "") || "Área " + (drawnAreas.length+1);
       let areaColor = color || selectedColor;
-      let parentName = preParent || findParentArea(polygon);
+      let parent = preParent || findParentArea(polygon);
 
-      const areaObj = { polygon, data: { name: areaName, color: areaColor, parent: parentName }, label: null };
+      const areaObj = { polygon, data:{name, color:areaColor, parent}, label:null };
       polygon.setOptions({ fillColor: areaColor, strokeColor: areaColor });
+      const label = createLabelForPolygon(polygon, areaObj.data); areaObj.label=label;
 
-      const label = createLabelForPolygon(polygon, areaObj.data);
-      areaObj.label = label;
+      google.maps.event.addListener(polygon, 'click', ()=>{ closeAllLabels(); label.setPosition(getPolygonCenter(polygon)); label.open(map); });
+      function sync(){ label.setPosition(getPolygonCenter(polygon)); saveAreas(); atualizarPinsERota(); }
+      google.maps.event.addListener(polygon.getPath(),'set_at',sync);
+      google.maps.event.addListener(polygon.getPath(),'insert_at',sync);
+      google.maps.event.addListener(polygon,'dragend',sync);
+      google.maps.event.addListener(polygon,'map_changed',()=>{ if(!polygon.getMap()){ drawnAreas=drawnAreas.filter(a=>a.polygon!==polygon); saveAreas(); atualizarPinsERota(); } });
 
-      google.maps.event.addListener(polygon, 'click', function(){
-        closeAllLabels();
-        label.setPosition(getPolygonCenter(polygon));
-        label.open(map);
-      });
+      drawnAreas.push(areaObj); saveAreas(); atualizarPinsERota();
+    }
 
-      function syncAfterEdit(){
-        label.setPosition(getPolygonCenter(polygon));
-        saveAreasToStorage();
-        atualizarPinsEntregas();
-      }
-      google.maps.event.addListener(polygon.getPath(), 'set_at', syncAfterEdit);
-      google.maps.event.addListener(polygon.getPath(), 'insert_at', syncAfterEdit);
-      google.maps.event.addListener(polygon, 'dragend', syncAfterEdit);
+    // ===== Ruas (desenho e grafo)
+    function hookRoadPolyline(pl){
+      function sync(){ saveRoads(); rebuildRoadGraph(); atualizarPinsERota(); }
+      google.maps.event.addListener(pl.getPath(),'set_at',sync);
+      google.maps.event.addListener(pl.getPath(),'insert_at',sync);
+      google.maps.event.addListener(pl,'dragend',sync);
+      google.maps.event.addListener(pl,'map_changed',()=>{ if(!pl.getMap()){ roads=roads.filter(r=>r.polyline!==pl); saveRoads(); rebuildRoadGraph(); atualizarPinsERota(); } });
+    }
 
-      google.maps.event.addListener(polygon, 'map_changed', function(){
-        if(!polygon.getMap()){
-          const removedName = areaObj.data.name;
-          drawnAreas = drawnAreas.filter(a => a.polygon !== polygon);
-          const prev = entregas.length;
-          entregas = entregas.filter(e => e.area !== removedName);
-          if (prev !== entregas.length) { renumerarEntregas(); saveEntregas(); }
-          saveAreasToStorage();
-          setTimeout(atualizarPinsEntregas,100);
+    function rebuildRoadGraph(){
+      // nodes indexados por string "lat,lng" com tolerância
+      const tol = 1e-7;
+      function keyOf(ll){ return (Math.round(ll.lat()*1e7)/1e7)+','+(Math.round(ll.lng()*1e7)/1e7); }
+      const nodes = new Map(); const coords = new Map(); let idSeq=0;
+      function getId(ll){ const k=keyOf(ll); if(nodes.has(k)) return nodes.get(k); const id=String(idSeq++); nodes.set(k,id); coords.set(id,{lat:ll.lat(),lng:ll.lng()}); return id; }
+      const adj = new Map();
+      function addEdge(a,b,w){ if(!adj.has(a)) adj.set(a,[]); if(!adj.has(b)) adj.set(b,[]); adj.get(a).push({to:b,w}); adj.get(b).push({to:a,w}); }
+
+      roads.forEach(r=>{
+        const arr = r.polyline.getPath().getArray();
+        for(let i=0;i<arr.length-1;i++){
+          const A=arr[i], B=arr[i+1];
+          const idA=getId(A), idB=getId(B);
+          const w=haversine({lat:A.lat(),lng:A.lng()},{lat:B.lat(),lng:B.lng()});
+          addEdge(idA,idB,w);
         }
       });
-
-      drawnAreas.push(areaObj);
-      saveAreasToStorage();
-      atualizarPinsEntregas();
+      roadGraph = {nodes:coords, adj};
     }
 
-    function clearAllAreas() {
-      drawnAreas.forEach(({polygon,label}) => { if(label) label.close(); polygon.setMap(null); });
-      drawnAreas = [];
-      saveAreasToStorage();
-      entregas = [];
-      saveEntregas();
-      atualizarPinsEntregas();
+    // Dijkstra simples
+    function shortestPath(fromLatLng, toLatLng){
+      if(!roadGraph || roadGraph.nodes.size===0) return null;
+
+      // encontra nó mais próximo (snap)
+      function nearestNode(p){
+        let best=null, bestD=Infinity, bestId=null;
+        roadGraph.nodes.forEach((c,id)=>{
+          const d = haversine({lat:p.lat(),lng:p.lng()}, c);
+          if(d<bestD){ bestD=d; bestId=id; best=c; }
+        });
+        // limite opcional de encaixe: 150m (ajuste se quiser)
+        return (bestD<=150) ? {id:bestId, coord:best, dist:bestD} : null;
+      }
+      const nFrom = nearestNode(fromLatLng);
+      const nTo   = nearestNode(toLatLng);
+      if(!nFrom || !nTo) return null;
+
+      const N = roadGraph.nodes.size;
+      const dist = new Map(); const prev = new Map(); const done = new Set();
+      roadGraph.nodes.forEach((_,id)=>dist.set(id,Infinity));
+      dist.set(nFrom.id,0);
+
+      // min-heap simples por laço (N pequeno)
+      function extractMin(){
+        let best=null, bestD=Infinity;
+        dist.forEach((d,id)=>{ if(!done.has(id) && d<bestD){bestD=d; best=id;} });
+        return best;
+      }
+
+      while(true){
+        const u = extractMin();
+        if(!u || u===nTo.id) break;
+        done.add(u);
+        const edges = roadGraph.adj.get(u)||[];
+        edges.forEach(({to,w})=>{
+          if(done.has(to)) return;
+          const alt = dist.get(u)+w;
+          if(alt<dist.get(to)){ dist.set(to,alt); prev.set(to,u); }
+        });
+      }
+
+      // reconstrói caminho
+      const pathIds = [];
+      let cur = nTo.id;
+      if(!prev.has(cur) && cur!==nFrom.id) return null;
+      while(cur){ pathIds.unshift(cur); if(cur===nFrom.id) break; cur = prev.get(cur); }
+      // coords
+      const path = pathIds.map(id=> roadGraph.nodes.get(id));
+      // adiciona pontos de snap (origem/destino reais) nas extremidades
+      path.unshift({lat: fromLatLng.lat(), lng: fromLatLng.lng()});
+      path.push({lat: toLatLng.lat(), lng: toLatLng.lng()});
+      return path;
     }
 
-    function posicaoDeslocada(center, index, total){
-      const raio = 15 + Math.min(40, total*4);
-      const ang = (2*Math.PI) * (index / Math.max(1,total));
-      const cosLat = Math.cos(center.lat() * Math.PI / 180);
-      const safeCos = Math.abs(cosLat) < 1e-6 ? 1e-6 : cosLat;
-      const dLat = (raio/111320) * Math.cos(ang);
-      const dLng = (raio/(111320*safeCos)) * Math.sin(ang);
-      return new google.maps.LatLng(center.lat() + dLat, center.lng() + dLng);
-    }
+    // ===== Pins e Rota
+    function atualizarPinsERota(){
+      // limpa pins
+      entregaMarkers.forEach(m=>m.setMap(null)); entregaMarkers=[];
 
-    function atualizarPinsEntregas(){
-      // limpar pins
-      entregaMarkers.forEach(m => m.setMap(null));
-      entregaMarkers = [];
-      // limpar índice visual de rota (será recalculado em buildRoadRoute)
-      visualIndexFromRoute = null;
+      // base: não-entregues
+      const pendentes = entregas.slice().sort((a,b)=>a.order-b.order).filter(e=>e.status!==STATUS.ENTREGUE);
 
-      if (!map) return;
+      // índice visual simples (1..N) para pendentes
+      const idx = new Map(); pendentes.forEach((e,i)=>idx.set(`${e.placa}|${e.area}`, i+1));
 
-      // base: não-entregues pela ordem salva
-      const naoEntreguesOrdenadas = entregas.slice().sort((a,b)=>a.order-b.order).filter(e => e.status !== STATUS.ENTREGUE);
-
-      // numeração visual padrão (sem otimização/antes da rota)
-      const displayIndex = new Map();
-      naoEntreguesOrdenadas.forEach((e,i)=> displayIndex.set(`${e.placa}|${e.area}`, i+1));
-
-      // Agrupar por área p/ deslocar pins e desenhar
+      // agrupar por área
       const porArea = {};
-      entregas.forEach(e => { (porArea[e.area] ||= []).push(e); });
+      entregas.forEach(e=>{ (porArea[e.area] ||= []).push(e); });
 
-      Object.keys(porArea).forEach(areaName => {
-        const area = drawnAreas.find(a => a.data.name === areaName);
-        if (!area) return;
+      Object.keys(porArea).forEach(areaName=>{
+        const area = drawnAreas.find(a=>a.data.name===areaName); if(!area) return;
         const center = getPolygonCenter(area.polygon);
         const lista = porArea[areaName].slice().sort((a,b)=>a.order-b.order);
-        lista.forEach((e, i) => {
+        lista.forEach((e,i)=>{
           const pos = posicaoDeslocada(center, i, lista.length);
           const color = statusColor(e.status);
           const key = `${e.placa}|${e.area}`;
-
-          // usa índice da rota (se já existir), senão o padrão
-          const idx = (visualIndexFromRoute && visualIndexFromRoute.get(key)) || displayIndex.get(key) || "";
-          const labelText = (e.status === STATUS.ENTREGUE) ? "✓" : String(idx);
-
+          const labelText = (e.status===STATUS.ENTREGUE) ? "✓" : String(idx.get(key)||"");
           const marker = new google.maps.Marker({
-            position: pos,
-            map,
-            title: `${e.status === STATUS.ENTREGUE ? '✓' : '#'+(idx||'')} • ${e.placa} • ${e.area} • ${e.status}`,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              fillColor: color,
-              fillOpacity: 1,
-              strokeColor: "#333",
-              strokeWeight: 1,
-              scale: 10
-            },
+            position: pos, map,
+            title: `${labelText==='✓'?'✓':'#'+labelText} • ${e.placa} • ${e.area} • ${e.status}`,
+            icon: { path: google.maps.SymbolPath.CIRCLE, fillColor: color, fillOpacity: 1, strokeColor: "#333", strokeWeight: 1, scale: 10 },
             label: { text: labelText, fontSize: "14px", fontWeight: "700" },
-            zIndex: 200 + (Number(idx) || 0)
+            zIndex: 200 + (Number(idx.get(key))||0)
           });
           entregaMarkers.push(marker);
         });
       });
 
-      // constrói rota por ruas
-      buildRoadRoute();
+      // desenha rota no grafo
+      drawRouteOnRoadGraph(pendentes);
     }
 
-    function buildRoadRoute(){
-      // apaga rota atual
-      if (directionsRenderer) directionsRenderer.set('directions', null);
+    function drawRouteOnRoadGraph(pendentes){
+      if(routePolyline){ routePolyline.setMap(null); routePolyline=null; }
+      if(pendentes.length<2){ return; }
 
-      const optimize = document.getElementById('optimizeChk')?.checked;
+      const centers = pendentes.map(e=>{
+        const area = drawnAreas.find(a=>a.data.name===e.area);
+        return area ? getPolygonCenter(area.polygon) : null;
+      }).filter(Boolean);
 
-      const naoEntregues = entregas.slice().sort((a,b)=>a.order-b.order).filter(e => e.status !== STATUS.ENTREGUE);
-      if (naoEntregues.length < 2) { visualIndexFromRoute = null; return; }
+      if(centers.length<2) return;
 
-      // centros das áreas
-      const pontos = [];
-      naoEntregues.forEach(e=>{
-        const area = drawnAreas.find(a => a.data.name === e.area);
-        if (area) pontos.push({ key: `${e.placa}|${e.area}`, latlng: getPolygonCenter(area.polygon) });
-      });
-
-      if (pontos.length < 2) { visualIndexFromRoute = null; return; }
-
-      // Limite de 25 pontos por rota (origem+destino+waypoints)
-      if (pontos.length > 25){
-        // fallback: sem rota por ruas (ou poderíamos fatiar em blocos)
-        visualIndexFromRoute = null;
-        return;
+      // concatena menor caminho entre pares consecutivos
+      let finalPath = [];
+      for(let i=0;i<centers.length-1;i++){
+        const from = centers[i], to = centers[i+1];
+        const path = shortestPath(from, to);
+        if(path){ // tem rua interna
+          if(finalPath.length) path.shift(); // evita duplicar o nó de junção
+          finalPath = finalPath.concat(path);
+        } else {
+          // fallback: reta
+          if(finalPath.length) finalPath.push({lat: from.lat(), lng: from.lng()});
+          finalPath.push({lat: to.lat(), lng: to.lng()});
+        }
       }
 
-      const origin = pontos[0].latlng;
-      const destination = pontos[pontos.length-1].latlng;
-      const waypoints = pontos.slice(1, -1).map(p => ({ location: p.latlng, stopover: true }));
-
-      directionsService.route({
-        origin, destination, waypoints,
-        travelMode: google.maps.TravelMode.DRIVING,
-        optimizeWaypoints: !!optimize
-      }, (result, status) => {
-        if (status !== google.maps.DirectionsStatus.OK) {
-          console.warn('Directions falhou:', status);
-          visualIndexFromRoute = null;
-          return;
-        }
-        directionsRenderer.setDirections(result);
-
-        // Monta índice visual pela ordem da rota exibida
-        const order = [0];
-        const wpOrder = (result.routes?.[0]?.waypoint_order) || pontos.slice(1,-1).map((_,i)=>i); // identidade
-        wpOrder.forEach(i => order.push(i+1));
-        order.push(pontos.length-1);
-
-        visualIndexFromRoute = new Map();
-        order.forEach((idx, i) => {
-          const key = pontos[idx].key;
-          visualIndexFromRoute.set(key, i+1);
-        });
-
-        // Atualiza pins com a numeração da rota
-        // (não mexe na ordem salva; é só visual)
-        entregaMarkers.forEach(m => m.setMap(null));
-        entregaMarkers = [];
-        // desenha novamente
-        const porArea = {};
-        entregas.forEach(e => { (porArea[e.area] ||= []).push(e); });
-        Object.keys(porArea).forEach(areaName => {
-          const area = drawnAreas.find(a => a.data.name === areaName);
-          if (!area) return;
-          const center = getPolygonCenter(area.polygon);
-          const lista = porArea[areaName].slice().sort((a,b)=>a.order-b.order);
-          lista.forEach((e, i) => {
-            const pos = posicaoDeslocada(center, i, lista.length);
-            const color = statusColor(e.status);
-            const key = `${e.placa}|${e.area}`;
-            const idx = (visualIndexFromRoute && visualIndexFromRoute.get(key)) || "";
-            const labelText = (e.status === STATUS.ENTREGUE) ? "✓" : String(idx);
-
-            const marker = new google.maps.Marker({
-              position: pos, map,
-              title: `${e.status === STATUS.ENTREGUE ? '✓' : '#'+(idx||'')} • ${e.placa} • ${e.area} • ${e.status}`,
-              icon: { path: google.maps.SymbolPath.CIRCLE, fillColor: color, fillOpacity: 1, strokeColor: "#333", strokeWeight: 1, scale: 10 },
-              label: { text: labelText, fontSize: "14px", fontWeight: "700" },
-              zIndex: 200 + (Number(idx) || 0)
-            });
-            entregaMarkers.push(marker);
-          });
-        });
+      routePolyline = new google.maps.Polyline({
+        path: finalPath.map(p=>new google.maps.LatLng(p.lat,p.lng)),
+        strokeColor: "#e53935", strokeOpacity: .95, strokeWeight: 4, geodesic: true, map
       });
     }
 
-    function setPolygonColor(color){
-      selectedColor = color;
-      if (drawingManager) {
-        drawingManager.setOptions({
-          polygonOptions: { editable:true, draggable:true, strokeColor:color, fillColor:color, fillOpacity:0.18, strokeWeight:2 }
-        });
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', function(){
-      document.querySelectorAll('.color-circle').forEach(c=>{
-        c.onclick = function(){
-          document.querySelectorAll('.color-circle').forEach(x=>x.classList.remove('selected'));
-          this.classList.add('selected');
-          setPolygonColor(this.dataset.color);
-        }
-      });
-      document.getElementById('customColor').addEventListener('input',function(){
-        document.querySelectorAll('.color-circle').forEach(x=>x.classList.remove('selected'));
-        setPolygonColor(this.value);
-      });
-      document.querySelector('.color-circle[data-color="#2196f3"]').classList.add('selected');
-
-      // Recalcular rota quando alternar otimização
-      document.getElementById('optimizeChk').addEventListener('change', buildRoadRoute);
-    });
-
-    function initMap() {
-      const tipoMapa = lerTipoMapa();
-      map = new google.maps.Map(document.getElementById('map'), {
-        center: {lat: -22.5162, lng: -44.0948},
-        zoom: 15,
-        mapTypeId: tipoMapa,
-        streetViewControl: true,
-        fullscreenControl: true,
-      });
-
-      drawingManager = new google.maps.drawing.DrawingManager({
-        drawingMode: null, drawingControl: false,
-        polygonOptions: {
-          editable: true, draggable: true, strokeColor: selectedColor, fillColor: selectedColor,
-          fillOpacity: 0.18, strokeWeight: 2,
-        }
-      });
-      drawingManager.setMap(map);
-
-      directionsService = new google.maps.DirectionsService();
-      directionsRenderer = new google.maps.DirectionsRenderer({
-        map,
-        suppressMarkers: true,
-        polylineOptions: {
-          strokeColor: "#e53935",
-          strokeOpacity: 0.95,
-          strokeWeight: 4
-        }
-      });
-
-      document.querySelectorAll('.color-circle, #customColor').forEach(el => {
-        el.addEventListener('click', () => setPolygonColor(selectedColor));
-        el.addEventListener('input', () => setPolygonColor(selectedColor));
-      });
-
-      google.maps.event.addListener(drawingManager, 'polygoncomplete', function(polygon) {
-        polygon.setOptions({ fillColor: selectedColor, strokeColor: selectedColor });
-        handlePolygonComplete(polygon);
-        drawingManager.setDrawingMode(null);
-        document.getElementById('drawAreaBtn').classList.remove('active');
-      });
-
-      document.getElementById('drawAreaBtn').onclick = function() {
-        setPolygonColor(selectedColor);
-        drawingManager.setDrawingMode('polygon');
-        this.classList.add('active');
-      };
-      document.getElementById('clearBtn').onclick = clearAllAreas;
-
-      if(!loadedAreas){
-        loadedAreas = true;
-        google.maps.event.addListenerOnce(map, 'idle', function(){
-          if(google.maps.geometry) {
-            loadAreasFromStorage();
-            loadEntregas();
-            atualizarPinsEntregas();
-          } else {
-            if(!window._geoLoaded){
-              window._geoLoaded = true;
-              const scr = document.createElement('script');
-              scr.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing,geometry&callback=initMap";
-              document.body.appendChild(scr);
-            }
-          }
-        });
-      }
-    }
-
-    // ===== Modais: Placa =====
+    // ===== Entregas: UI
+    function renumerar(){ entregas.sort((a,b)=>a.order-b.order).forEach((e,i)=>e.order=i+1); }
     function openModalPlaca(){
       const select = document.getElementById('areaPlaca');
       const geoareas = drawnAreas.map(a=>a.data.name).sort();
       select.innerHTML = '<option value="">Selecione...</option>' + geoareas.map(g=>`<option>${g}</option>`).join('');
-      document.getElementById('placaInput').value = '';
-      document.getElementById('statusPlaca').value = STATUS.AGUARDANDO;
-      document.getElementById('modalPlaca').style.display = "flex";
+      document.getElementById('placaInput').value=''; document.getElementById('statusPlaca').value=STATUS.AGUARDANDO;
+      document.getElementById('modalPlaca').style.display='flex';
     }
-    function closeModalPlaca(){ document.getElementById('modalPlaca').style.display = "none"; }
-
-    document.getElementById('incluirPlacaBtn').onclick = openModalPlaca;
-
-    document.getElementById('placaForm').onsubmit = function(e){
-      e.preventDefault();
-      const placa = document.getElementById('placaInput').value.trim().toUpperCase();
-      const area = document.getElementById('areaPlaca').value;
-      const status = document.getElementById('statusPlaca').value;
-      if(!placa || !area){ alert("Informe placa e geoárea."); return; }
-      const order = entregas.length + 1;
-      entregas.push({ placa, area, order, status });
-      saveEntregas();
-      atualizarPinsEntregas();
-      closeModalPlaca();
-    };
-
-    // ===== Modal: Gestão (drag & drop + status) =====
-    const modalGestao = document.getElementById('modalGestao');
-    const entregasList = document.getElementById('entregasList');
-
-    function openModalGestao(){
-      renderEntregasList();
-      modalGestao.style.display = 'flex';
-    }
-    function closeModalGestao(){ modalGestao.style.display = 'none'; }
-
-    document.getElementById('gerenciarOrdemBtn').onclick = openModalGestao;
+    function closeModalPlaca(){ document.getElementById('modalPlaca').style.display='none'; }
+    function openModalGestao(){ renderEntregasList(); document.getElementById('modalGestao').style.display='flex'; }
+    function closeModalGestao(){ document.getElementById('modalGestao').style.display='none'; }
 
     function renderEntregasList(){
-      const arr = [...entregas].sort((a,b)=>a.order-b.order);
-      const naoEntregues = arr.filter(e => e.status !== STATUS.ENTREGUE);
-      const idxVisual = new Map();
-      naoEntregues.forEach((e,i)=> idxVisual.set(`${e.placa}|${e.area}`, i+1));
-
-      entregasList.innerHTML = '';
-      arr.forEach((e) => {
-        const li = document.createElement('li');
-        li.className = 'drag-item';
-        li.draggable = true;
-        li.dataset.key = e.placa + '|' + e.area;
-
-        // se já tiver visualIndexFromRoute (rota otimizada), use-o; senão use idxVisual padrão
-        const key = `${e.placa}|${e.area}`;
-        const numero = (visualIndexFromRoute && visualIndexFromRoute.get(key)) ?? idxVisual.get(key);
-
-        const pill = (e.status === STATUS.ENTREGUE)
-          ? `<span class="pill pill-ok">✓</span>`
-          : `<span class="pill">#${numero ?? ''}</span>`;
-
+      const ul = document.getElementById('entregasList'); ul.innerHTML='';
+      const arr = entregas.slice().sort((a,b)=>a.order-b.order);
+      const pend = arr.filter(e=>e.status!==STATUS.ENTREGUE);
+      const idx = new Map(); pend.forEach((e,i)=>idx.set(`${e.placa}|${e.area}`, i+1));
+      arr.forEach(e=>{
+        const li=document.createElement('li'); li.className='drag-item'; li.draggable=true; li.dataset.key=e.placa+'|'+e.area;
+        const key = `${e.placa}|${e.area}`; const num = idx.get(key);
+        const pill = (e.status===STATUS.ENTREGUE) ? `<span class="pill pill-ok">✓</span>` : `<span class="pill">#${num??''}</span>`;
         li.innerHTML = `
           <div class="left">
             <span class="handle">☰</span>
@@ -675,107 +455,107 @@
               <option ${e.status===STATUS.EM_ROTA?'selected':''}>${STATUS.EM_ROTA}</option>
               <option ${e.status===STATUS.ENTREGUE?'selected':''}>${STATUS.ENTREGUE}</option>
             </select>
-            <button class="danger-btn" onclick="removerEntrega('${e.placa.replace(/'/g,"\\'")}', '${e.area.replace(/'/g,"\\'")}')">Excluir</button>
-          </div>
-        `;
-        entregasList.appendChild(li);
+            <button class="danger-btn">Excluir</button>
+          </div>`;
+        ul.appendChild(li);
       });
-      wireDragAndDrop();
-      wireStatusChanges();
-    }
-
-    function wireStatusChanges(){
-      entregasList.querySelectorAll('.drag-item').forEach(li=>{
-        const select = li.querySelector('.status-select');
-        select.addEventListener('change', () => {
-          const [placa, area] = li.dataset.key.split('|');
-          const obj = entregas.find(x => x.placa === placa && x.area === area);
-          if (obj){
-            obj.status = select.value;
-            saveEntregas();
-            renderEntregasList();
-            atualizarPinsEntregas();
-          }
-        });
+      // eventos
+      ul.querySelectorAll('.danger-btn').forEach(btn=>{
+        btn.onclick=()=>{
+          const li=btn.closest('.drag-item'); const [placa,area]=li.dataset.key.split('|');
+          entregas = entregas.filter(e=>!(e.placa===placa && e.area===area)); renumerar(); saveEntregas(); renderEntregasList(); atualizarPinsERota();
+        };
       });
+      ul.querySelectorAll('.status-select').forEach(sel=>{
+        sel.onchange=()=>{
+          const li=sel.closest('.drag-item'); const [placa,area]=li.dataset.key.split('|');
+          const obj = entregas.find(e=>e.placa===placa && e.area===area); if(obj){ obj.status = sel.value; saveEntregas(); renderEntregasList(); atualizarPinsERota(); }
+        };
+      });
+      wireDragAndDrop(ul);
     }
-
-    function removerEntrega(placa, area){
-      entregas = entregas.filter(e => !(e.placa === placa && e.area === area));
-      renumerarEntregas();
-      saveEntregas();
-      renderEntregasList();
-      atualizarPinsEntregas();
-    }
-
-    function renumerarEntregas(){
-      entregas.sort((a,b)=>a.order-b.order).forEach((e,i)=> e.order = i+1);
-    }
-
-    function wireDragAndDrop(){
-      let dragEl = null;
-      entregasList.querySelectorAll('.drag-item').forEach(item=>{
-        item.addEventListener('dragstart', (ev)=>{
-          dragEl = item;
-          ev.dataTransfer.effectAllowed = 'move';
-        });
-        item.addEventListener('dragover', (ev)=>{
+    function wireDragAndDrop(ul){
+      let dragEl=null;
+      ul.querySelectorAll('.drag-item').forEach(item=>{
+        item.addEventListener('dragstart', ev=>{ dragEl=item; ev.dataTransfer.effectAllowed='move'; });
+        item.addEventListener('dragover', ev=>{
           ev.preventDefault();
-          const bounding = item.getBoundingClientRect();
-          const offset = ev.clientY - bounding.top;
-          const before = offset < bounding.height/2;
-          entregasList.insertBefore(dragEl, before ? item : item.nextSibling);
+          const b=item.getBoundingClientRect(); const before=(ev.clientY-b.top)<(b.height/2);
+          ul.insertBefore(dragEl, before?item:item.nextSibling);
         });
-        item.addEventListener('dragend', ()=> { dragEl = null; });
+        item.addEventListener('dragend', ()=>{ dragEl=null; });
       });
     }
-
     function salvarReordenacao(){
-      const novos = [];
-      entregasList.querySelectorAll('.drag-item').forEach((li, idx)=>{
-        const [placa, area] = li.dataset.key.split('|');
-        const obj = entregas.find(e => e.placa === placa && e.area === area);
-        if (obj) { obj.order = idx + 1; novos.push(obj); }
+      const novos=[]; document.querySelectorAll('#entregasList .drag-item').forEach((li,idx)=>{
+        const [placa,area]=li.dataset.key.split('|'); const obj=entregas.find(e=>e.placa===placa && e.area===area); if(obj){ obj.order=idx+1; novos.push(obj); }
       });
-      entregas = novos;
-      saveEntregas();
-      closeModalGestao();
-      atualizarPinsEntregas();
+      entregas = novos; saveEntregas(); closeModalGestao(); atualizarPinsERota();
     }
 
-    // Sidebar responsivo
-    const menuToggle = document.getElementById('menu-toggle');
-    const sidebar = document.getElementById('sidebar');
-    menuToggle.addEventListener('click', function () { sidebar.classList.toggle('active'); });
-    document.addEventListener('click', function (e) {
-      if (window.innerWidth <= 900 && sidebar.classList.contains('active') && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
-        sidebar.classList.remove('active');
-      }
-    });
+    // ===== Init Map e botões
+    function initMap(){
+      map = new google.maps.Map(document.getElementById('map'), {
+        center:{lat:-22.5162, lng:-44.0948}, zoom:15, mapTypeId:'satellite', streetViewControl:true, fullscreenControl:true
+      });
+
+      drawingManager = new google.maps.drawing.DrawingManager({
+        drawingMode: null, drawingControl:false,
+        polygonOptions:{ editable:true, draggable:true, strokeColor:selectedColor, fillColor:selectedColor, fillOpacity:.18, strokeWeight:2 },
+        polylineOptions:{ editable:true, strokeColor:'#ff1744', strokeWeight:3, strokeOpacity:.9 }
+      });
+      drawingManager.setMap(map);
+
+      // eventos desenho
+      google.maps.event.addListener(drawingManager,'polygoncomplete',poly=>{
+        poly.setOptions({fillColor:selectedColor,strokeColor:selectedColor}); handlePolygonComplete(poly);
+        drawingManager.setDrawingMode(null); document.getElementById('drawAreaBtn').classList.remove('active');
+      });
+      google.maps.event.addListener(drawingManager,'polylinecomplete',pl=>{
+        hookRoadPolyline(pl); roads.push({polyline:pl}); saveRoads(); rebuildRoadGraph(); atualizarPinsERota();
+        drawingManager.setDrawingMode(null); document.getElementById('drawRoadBtn').classList.remove('active');
+      });
+
+      // Botões
+      document.getElementById('drawAreaBtn').onclick=function(){ setPolygonColor(selectedColor); drawingManager.setDrawingMode('polygon'); this.classList.add('active'); };
+      document.getElementById('clearAreasBtn').onclick=function(){
+        drawnAreas.forEach(a=>{ if(a.label) a.label.close(); a.polygon.setMap(null); }); drawnAreas=[]; saveAreas();
+        // também limpa entregas (opcional, aqui não limpo)
+        atualizarPinsERota();
+      };
+
+      document.getElementById('drawRoadBtn').onclick=function(){ drawingManager.setDrawingMode('polyline'); this.classList.add('active'); };
+      document.getElementById('clearRoadsBtn').onclick=function(){
+        roads.forEach(r=>r.polyline.setMap(null)); roads=[]; saveRoads(); rebuildRoadGraph(); atualizarPinsERota();
+      };
+
+      document.getElementById('incluirPlacaBtn').onclick=openModalPlaca;
+      document.getElementById('gerenciarOrdemBtn').onclick=openModalGestao;
+
+      // persistência
+      loadAreas(); loadRoads(); loadEntregas(); atualizarPinsERota();
+
+      // modal eventos
+      document.getElementById('placaForm').onsubmit=function(e){
+        e.preventDefault();
+        const placa=document.getElementById('placaInput').value.trim().toUpperCase();
+        const area=document.getElementById('areaPlaca').value; const status=document.getElementById('statusPlaca').value;
+        if(!placa||!area){ alert('Informe placa e geoárea.'); return; }
+        entregas.push({placa,area,order:entregas.length+1,status}); saveEntregas(); atualizarPinsERota(); closeModalPlaca();
+      };
+      document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{ if(e.target===bg) bg.style.display='none'; }));
+
+      // popular combo de áreas ao abrir o modal
+      document.getElementById('incluirPlacaBtn').addEventListener('click',()=>{
+        const select = document.getElementById('areaPlaca');
+        const geoareas = drawnAreas.map(a=>a.data.name).sort();
+        select.innerHTML = '<option value="">Selecione...</option>' + geoareas.map(g=>`<option>${g}</option>`).join('');
+      });
+    }
+    window.initMap = initMap;
   </script>
 
-  <!-- Google Maps (habilite também a Directions API no console do Google) -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing,geometry&callback=initMap" async defer></script>
-
-  <script src="darkmode.js"></script>
+  <!-- Google Maps (drawing+geometry) -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&libraries=drawing,geometry&callback=initMap" async defer></script>
 </body>
-<footer class="footer">
-  <div class="footer-content" style="display: flex; justify-content: space-between; align-items: center;">
-    <div class="footer-logo-group">
-      <img src="assets/syncnex-logo-64x64.png" alt="Logo SyncNex" class="footer-logo" />
-      <div>
-        <span class="footer-title">SyncNex &copy; 2025</span>
-        <span class="footer-slogan">Conectando eficiência ao seu negócio</span>
-      </div>
-    </div>
-    <nav class="footer-nav">
-      <a href="#">Sobre Nós</a>
-      <a href="#">Contato</a>
-      <a href="#">Política de Privacidade</a>
-      <a href="#">Termos de Uso</a>
-    </nav>
-      <span class="versao">Versão <b>V1.4.0</b></span>
-    </div>
-  </div>
-</footer>
 </html>

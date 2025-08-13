@@ -7,45 +7,61 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" type="image/png" href="assets/syncnex-favicon.png">
   <style>
-    /* ===== ORG CHART (estilo da 1ª imagem) ===== */
+    /* ===== ORG CHART ===== */
     .org-wrapper{overflow-x:auto;padding:12px}
     .org-root{display:flex;flex-direction:column;align-items:center;gap:24px}
-    .org-level{display:flex;gap:28px;justify-content:center;flex-wrap:nowrap}
+
     .org-card{
-      min-width:180px; max-width:260px; text-align:center;
+      min-width:200px; max-width:260px; text-align:center;
       background:var(--card-bg, #e7f2fb); color:var(--card-fg, #0b3a5b);
-      border-radius:12px; padding:10px 12px; font-weight:700;
+      border-radius:14px; padding:12px; font-weight:700;
       box-shadow:0 1px 0 rgba(0,0,0,.08), 0 6px 14px rgba(0,0,0,.06);
     }
-    .org-subcard{
-      background:#fff; color:#2b2b2b; border-radius:10px; padding:8px 10px;
-      font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.06);
+    .org-person{
+      cursor:pointer; position:relative; user-select:none;
     }
-    .org-activity{font-weight:500; margin-top:6px; padding:6px 8px; border-radius:8px; background:#f6f7fb}
-    .org-activity[contenteditable="true"]{outline:2px dashed #88a; background:#eef3ff}
-    .org-controls{display:flex; gap:8px; justify-content:center; margin-top:8px}
-    .org-controls button{font-size:12px; padding:4px 6px; border-radius:8px}
+    .org-person .chev{
+      font-weight:800; opacity:.8; margin-left:6px;
+      display:inline-block; transform:translateY(-1px);
+    }
+    .org-subcard{
+      background:#fff; color:#2b2b2b; border-radius:12px; padding:10px 12px;
+      font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.06);
+      width:260px; max-width:92vw;
+    }
+    .org-activity{
+      font-weight:500; margin-top:8px; padding:8px 10px; border-radius:10px; background:#f6f7fb
+    }
+    .editable[contenteditable="true"]{outline:2px dashed #88a; border-radius:6px; padding:2px 4px}
+    .xbtn{margin-left:6px; cursor:pointer}
 
-    /* Conectores (linhas) */
+    /* Conectores */
     .connector-v{width:2px; background:#9cb3c6; height:16px; margin:0 auto}
-    .connector-h{height:2px; background:#9cb3c6; width:100%}
-    .branch{display:flex; flex-direction:column; align-items:center}
-    .children{position:relative; display:flex; gap:22px; margin-top:12px}
-    .children:before{content:""; position:absolute; top:-12px; left:0; right:0; height:2px; background:#9cb3c6}
-    .child{display:flex; flex-direction:column; align-items:center}
-    .child .connector-v{height:12px}
+    .stack{display:flex; flex-direction:column; align-items:center; gap:14px; margin-top:10px}
+    .stack .connector-v{height:12px}
 
-    /* Dark mode ajuste para cartões */
+    /* Layout de pessoas (lado a lado), cada coluna com uma pilha vertical de pilares */
+    .people-row{
+      display:flex; gap:48px; justify-content:center; align-items:flex-start;
+      flex-wrap:nowrap; padding:0 12px; min-width:780px;
+    }
+    .person-col{display:flex; flex-direction:column; align-items:center}
+
+    /* Dark mode */
     body.dark-mode .org-card{--card-bg:#124c74; --card-fg:#e6f0f7}
     body.dark-mode .org-subcard{background:#1e2b36; color:#e6f0f7}
     body.dark-mode .org-activity{background:#16222c; color:#cfe2f3}
-    body.dark-mode .connector-v, body.dark-mode .children:before{background:#3a5366}
+    body.dark-mode .connector-v{background:#3a5366}
 
-    /* Cabeçalhos “pessoa / pilar” */
     .label-muted{font-size:11px; font-weight:600; opacity:.8; letter-spacing:.04em}
-    .pill-title{font-size:13px}
-    .editable[contenteditable="true"]{outline:2px dashed #88a; border-radius:6px; padding:2px 4px}
-    .xbtn{margin-left:6px; cursor:pointer}
+
+    /* Animação colapsável */
+    .collapse{
+      overflow:hidden;
+      transition:max-height .25s ease;
+      width:100%;
+      display:block;
+    }
   </style>
 </head>
 <body>
@@ -78,7 +94,6 @@
     <main class="main-content">
       <h2 class="titulo">Organograma de Atividades Staffs GIL</h2>
 
-      <!-- Onde o organograma hierárquico é renderizado -->
       <div id="organograma" class="org-wrapper"></div>
 
       <div class="controls">
@@ -93,7 +108,7 @@
   <script>
     let editMode = false;
 
-    // Estado principal (mesmo formato, aproveitando seu localStorage)
+    // Estado principal
     let data = JSON.parse(localStorage.getItem("organograma")) || {
       pessoas: ["Glaubert", "Sergio", "Daiana"],
       pilares: ["Pilar A", "Pilar B", "Pilar C"],
@@ -104,87 +119,111 @@
       ]
     };
 
-    // ---- Render em ÁRVORE: Equipe (raiz) -> Pessoas -> Pilares c/ atividades da pessoa ----
+    // Estado de colapso por pessoa (persiste)
+    let colapso = JSON.parse(localStorage.getItem("org-colapso")) || {};
+
+    function persistCollapse(){ localStorage.setItem("org-colapso", JSON.stringify(colapso)); }
+
+    // Render
     function renderChart() {
       const wrap = document.getElementById("organograma");
       wrap.innerHTML = "";
 
-      // Nível Raiz
       const root = document.createElement("div");
       root.className = "org-root";
 
       const topo = document.createElement("div");
       topo.className = "org-card";
-      topo.innerHTML = `<div class="label-muted">EQUIPE</div>
-                        <div>Staffs GIL</div>`;
+      topo.innerHTML = `<div class="label-muted">EQUIPE</div><div>Staffs GIL</div>`;
       root.appendChild(topo);
       root.appendChild(connectorV());
 
-      // Nível Pessoas
-      const pessoasLevel = document.createElement("div");
-      pessoasLevel.className = "org-level";
+      const row = document.createElement("div");
+      row.className = "people-row";
 
       data.pessoas.forEach((nome, idxPessoa) => {
-        const branch = document.createElement("div");
-        branch.className = "branch";
+        const col = document.createElement("div");
+        col.className = "person-col";
 
+        // Cabeçalho da pessoa (clicável para colapsar/expandir)
+        const aberto = !(colapso[idxPessoa]); // default expandido (false = não colapsado)
         const pessoaCard = document.createElement("div");
-        pessoaCard.className = "org-card";
+        pessoaCard.className = "org-card org-person";
         pessoaCard.innerHTML = `
           <div class="label-muted">PESSOA</div>
           <div class="editable" contenteditable="${editMode}"
                oninput="updateNome(${idxPessoa}, this.innerText)">${nome}</div>
-          ${editMode ? `<span class="xbtn" title="Remover" onclick="removerPessoa(${idxPessoa})">❌</span>` : ""}
+          ${editMode ? `<span class="xbtn" title="Remover" onclick="event.stopPropagation(); removerPessoa(${idxPessoa})">❌</span>` : ""}
+          <span class="chev">${aberto ? "▾" : "▸"}</span>
         `;
-        branch.appendChild(pessoaCard);
+        pessoaCard.addEventListener("click", () => {
+          colapso[idxPessoa] = !colapso[idxPessoa];
+          persistCollapse();
+          renderChart();
+        });
 
-        // Conector vertical da pessoa para os pilares
-        branch.appendChild(connectorV());
+        col.appendChild(pessoaCard);
 
-        // Filhos (pilares que possuem atividade para essa pessoa)
-        const children = document.createElement("div");
-        children.className = "children";
+        // Conector
+        if (temAlgumConteudoParaPessoa(idxPessoa) || editMode) {
+          col.appendChild(connectorV());
+        }
 
-        // Para cada pilar (linha i) verificar se existe texto em atividades[i][idxPessoa]
+        // Pilha vertical de pilares (colapsável)
+        const pilhaWrap = document.createElement("div");
+        pilhaWrap.className = "collapse";
+
+        const pilha = document.createElement("div");
+        pilha.className = "stack";
+
+        // Monta pilares na vertical
         data.pilares.forEach((pilarNome, i) => {
           const atividade = (data.atividades[i] || [])[idxPessoa] || "";
-
-          // Mostra o pilar apenas se houver texto (ou se estiver em modo de edição)
           if (atividade.trim() !== "" || editMode) {
-            const child = document.createElement("div");
-            child.className = "child";
-
-            const pilarCard = document.createElement("div");
-            pilarCard.className = "org-subcard";
-            pilarCard.innerHTML = `
+            const bloco = document.createElement("div");
+            bloco.className = "org-subcard";
+            bloco.innerHTML = `
               <div class="label-muted">PILAR</div>
-              <div class="pill-title editable" contenteditable="${editMode}"
+              <div class="editable" contenteditable="${editMode}"
                    oninput="updatePilar(${i}, this.innerText)">${pilarNome}</div>
               ${editMode ? `<span class="xbtn" title="Remover Pilar" onclick="removerPilar(${i})">🗑️</span>` : ""}
               <div class="org-activity editable" contenteditable="${editMode}"
                    oninput="updateAtividade(${i}, ${idxPessoa}, this.innerText)">${atividade}</div>
-              ${editMode ? `<div class="org-controls">
+              ${editMode ? `<div style="margin-top:6px;">
                               <button onclick="limparAtividade(${i}, ${idxPessoa})">Limpar</button>
                             </div>` : ""}
             `;
-            child.appendChild(pilarCard);
-            children.appendChild(child);
+            const childHolder = document.createElement("div");
+            childHolder.style.display = "flex";
+            childHolder.style.flexDirection = "column";
+            childHolder.style.alignItems = "center";
+            childHolder.appendChild(bloco);
+
+            pilha.appendChild(childHolder);
           }
         });
 
-        // Linha horizontal só aparece se houver ao menos um “child”
-        if (children.children.length > 0) {
-          branch.appendChild(children);
-        } else {
-          // Sem filhos visíveis: remove o conector extra
-          branch.removeChild(branch.lastChild);
-        }
+        pilhaWrap.appendChild(pilha);
+        col.appendChild(pilhaWrap);
 
-        pessoasLevel.appendChild(branch);
+        // controla altura (animação) conforme aberto/fechado
+        requestAnimationFrame(()=>{
+          if (colapso[idxPessoa]) {
+            pilhaWrap.style.maxHeight = "0px";
+          } else {
+            pilhaWrap.style.maxHeight = pilha.scrollHeight + "px";
+          }
+        });
+
+        row.appendChild(col);
       });
 
-      root.appendChild(pessoasLevel);
+      root.appendChild(row);
       wrap.appendChild(root);
+    }
+
+    function temAlgumConteudoParaPessoa(j){
+      return data.pilares.some((_, i) => ((data.atividades[i]||[])[j]||"").trim() !== "");
     }
 
     function connectorV(){
@@ -214,6 +253,9 @@
       if (!nome) return;
       data.pessoas.push(nome);
       data.atividades.forEach(r => r.push(""));
+      // por padrão, pessoa nova começa expandida
+      colapso[data.pessoas.length - 1] = false;
+      persistCollapse();
       renderChart();
     }
 
@@ -230,6 +272,10 @@
       if (!confirm("Remover esta pessoa e suas atividades?")) return;
       data.pessoas.splice(index,1);
       data.atividades.forEach(r=>r.splice(index,1));
+      // Recompacta o mapa de colapso
+      const novo = {};
+      data.pessoas.forEach((_, idx)=> novo[idx] = colapso[idx] || false);
+      colapso = novo; persistCollapse();
       renderChart();
     }
 
@@ -251,7 +297,7 @@
       alert("Salvo com sucesso!");
     }
 
-    // ---- DARK MODE persistente + menu lateral ----
+    // ---- DARK MODE + menu ----
     document.addEventListener("DOMContentLoaded", () => {
       if (localStorage.getItem("dark-mode") === "1") {
         document.body.classList.add("dark-mode");

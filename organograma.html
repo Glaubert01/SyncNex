@@ -10,43 +10,49 @@
     :root{
       --line:#2a5f8a;
       --line-dark:#7fb3ff;
+      --card-fg:#0b3a5b;
+      --card-bg:#e7f2fb;
+      --subcard-bg:#ffffff;
+      --subcard-fg:#2b2b2b;
+      --activity-bg:#f6f7fb;
     }
 
-    /* Área do organograma */
+    /* ===== Área do organograma + scale-to-fit ===== */
     .org-wrapper{
       padding:12px;
-      overflow-x:hidden;   /* nunca mostra rolagem horizontal */
+      overflow-x:hidden;      /* nunca mostra rolagem horizontal */
       max-width:100%;
     }
-    /* Contêiner externo que recebe largura visual para centralizar o scale */
-    .fitouter{
-      margin:0 auto;           /* centraliza visualmente */
-      width:max-content;       /* será ajustado via JS para largura visual */
-    }
-    /* Caixa que é escalada */
+    .fitouter{ margin:0 auto; width:max-content; }
     .fitbox{
-      transform-origin: top left;     /* evita “corte” em lados */
+      transform-origin: top left;
       display:block;
-      width:max-content;              /* fica com a largura natural para medição */
+      width:max-content;      /* largura natural para medição */
     }
 
     .org-root{display:flex;flex-direction:column;align-items:center;gap:22px}
 
     .org-card{
       min-width:160px; max-width:240px; text-align:center;
-      background:var(--card-bg, #e7f2fb); color:var(--card-fg, #0b3a5b);
+      background:var(--card-bg); color:var(--card-fg);
       border-radius:14px; padding:12px; font-weight:700;
       box-shadow:0 1px 0 rgba(0,0,0,.08), 0 6px 14px rgba(0,0,0,.06);
+      position:relative;
     }
     .org-person{cursor:pointer; user-select:none; position:relative;}
     .org-person .chev{font-weight:900; opacity:.9; margin-left:6px}
 
     .org-subcard{
-      background:#fff; color:#2b2b2b; border-radius:12px; padding:10px 12px;
-      font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.06);
+      background:var(--subcard-bg); color:var(--subcard-fg);
+      border-radius:12px; padding:10px 12px; font-weight:600;
+      box-shadow:0 1px 0 rgba(0,0,0,.06);
       width:260px; max-width:92vw;
+      position:relative;
     }
-    .org-activity{font-weight:500; margin-top:8px; padding:8px 10px; border-radius:10px; background:#f6f7fb}
+    .org-activity{
+      font-weight:500; margin-top:8px; padding:8px 10px; border-radius:10px;
+      background:var(--activity-bg)
+    }
 
     .editable[contenteditable="true"]{outline:2px dashed #88a; border-radius:6px; padding:2px 4px}
     .xbtn{margin-left:6px; cursor:pointer}
@@ -62,23 +68,35 @@
     /* Linha horizontal (decorativa) */
     .rail{ width:100%; height:6px; background:var(--line); border-radius:4px; opacity:.45; }
 
-    /* Pessoas SEMPRE em uma única linha (nowrap) */
+    /* Pessoas sempre em uma única linha */
     .people-row{
       display:flex; flex-wrap:nowrap; gap:32px; justify-content:center; align-items:flex-start;
-      width:max-content;                 /* largura natural para medição */
+      width:max-content;
     }
     .person-col{display:flex; flex-direction:column; align-items:center; padding:0 4px}
-
-    /* Dark mode */
-    body.dark-mode .org-card{--card-bg:#124c74; --card-fg:#e6f0f7}
-    body.dark-mode .org-subcard{background:#1e2b36; color:#e6f0f7}
-    body.dark-mode .org-activity{background:#16222c; color:#cfe2f3}
-    body.dark-mode .connector-v, body.dark-mode .rail{background:var(--line-dark)}
 
     .label-muted{font-size:11px; font-weight:600; opacity:.9; letter-spacing:.04em}
 
     /* Colapsável */
     .collapse{ overflow:hidden; transition:max-height .28s ease; width:100%; display:block; }
+
+    /* Seletor de cor (aparece no modo edição) */
+    .colorpick{
+      position:absolute; top:6px; right:8px; width:22px; height:22px;
+      border:none; background:transparent; padding:0; cursor:pointer;
+    }
+    .colorpick::-webkit-color-swatch{border-radius:6px; border:1px solid rgba(0,0,0,.2)}
+    .colorpick::-moz-color-swatch{border-radius:6px; border:1px solid rgba(0,0,0,.2)}
+
+    /* ===== Dark mode ===== */
+    body.dark-mode{
+      --card-bg:#124c74;
+      --card-fg:#e6f0f7;
+      --subcard-bg:#1e2b36;
+      --subcard-fg:#e6f0f7;
+      --activity-bg:#16222c;
+    }
+    body.dark-mode .connector-v, body.dark-mode .rail{background:var(--line-dark)}
   </style>
 </head>
 <body>
@@ -127,7 +145,7 @@
   <script>
     let editMode = false;
 
-    // Estado principal
+    // ===== Estado principal (dados) =====
     let data = JSON.parse(localStorage.getItem("organograma")) || {
       pessoas: ["Glaubert", "Sergio", "Daiana"],
       pilares: ["Pilar A", "Pilar B", "Pilar C"],
@@ -138,16 +156,74 @@
       ]
     };
 
-    // Estado de colapso por pessoa (persiste)
-    let colapso = JSON.parse(localStorage.getItem("org-colapso")) || {};
-    function persistCollapse(){ localStorage.setItem("org-colapso", JSON.stringify(colapso)); }
+    // ===== Cores por caixa =====
+    // team: cor do cartão "Equipe"
+    // pessoas[j]: cor do cartão da pessoa j
+    // subcards[i][j]: cor do cartão Pilar(i) x Pessoa(j)
+    let colors = JSON.parse(localStorage.getItem("org-colors")) || {
+      team: null,
+      pessoas: [],
+      subcards: []
+    };
 
-    // --------- RENDER ----------
+    // ===== Estado de colapso por pessoa =====
+    let colapso = JSON.parse(localStorage.getItem("org-colapso")) || {};
+
+    function persistCollapse(){ localStorage.setItem("org-colapso", JSON.stringify(colapso)); }
+    function persistColors(){ localStorage.setItem("org-colors", JSON.stringify(colors)); }
+
+    // Garante que 'colors' tenha o mesmo formato/tamanho de 'data'
+    function normalizeColors(){
+      if (!colors.pessoas) colors.pessoas = [];
+      if (!colors.subcards) colors.subcards = [];
+
+      // ajusta pessoas
+      while (colors.pessoas.length < data.pessoas.length) colors.pessoas.push(null);
+      if (colors.pessoas.length > data.pessoas.length) colors.pessoas.length = data.pessoas.length;
+
+      // ajusta linhas de subcards (pilares)
+      while (colors.subcards.length < data.pilares.length) {
+        colors.subcards.push(Array(data.pessoas.length).fill(null));
+      }
+      if (colors.subcards.length > data.pilares.length) colors.subcards.length = data.pilares.length;
+
+      // ajusta colunas de subcards (pessoas)
+      colors.subcards.forEach((row, i) => {
+        while (row.length < data.pessoas.length) row.push(null);
+        if (row.length > data.pessoas.length) row.length = data.pessoas.length;
+      });
+      persistColors();
+    }
+    normalizeColors();
+
+    // ===== Helpers de cor =====
+    function isDark(hex){
+      if (!hex) return false;
+      const c = hex.replace('#','');
+      const bigint = parseInt(c.length===3 ? c.split('').map(x=>x+x).join('') : c, 16);
+      const r = (bigint >> 16) & 255;
+      const g = (bigint >> 8) & 255;
+      const b = bigint & 255;
+      // luminância relativa
+      const l = 0.2126*(r/255)**2.2 + 0.7152*(g/255)**2.2 + 0.0722*(b/255)**2.2;
+      return l < 0.45;
+    }
+    function applyCardColor(el, hex){
+      if (!el) return;
+      if (hex){
+        el.style.background = hex;
+        el.style.color = isDark(hex) ? '#f9fbff' : '#0b2233';
+      }else{
+        el.style.background = '';
+        el.style.color = '';
+      }
+    }
+
+    // ===== Render =====
     function renderChart() {
       const wrapper = document.getElementById("organograma");
       wrapper.innerHTML = "";
 
-      // Contêiner externo e a caixa escalável
       const outer = document.createElement("div");
       outer.id = "fitouter";
       outer.className = "fitouter";
@@ -159,39 +235,48 @@
       const root = document.createElement("div");
       root.className = "org-root";
 
+      // Cartão topo (Equipe)
       const topo = document.createElement("div");
       topo.className = "org-card";
-      topo.innerHTML = `<div class="label-muted">EQUIPE</div><div>Staffs GIL</div>`;
+      topo.innerHTML = `
+        <div class="label-muted">EQUIPE</div>
+        <div>Staffs GIL</div>
+        ${editMode ? `<input type="color" class="colorpick" value="${colors.team || '#e7f2fb'}"
+                   onchange="updateColor('team', null, null, this.value)">` : ""}
+      `;
+      applyCardColor(topo, colors.team);
       root.appendChild(topo);
 
       root.appendChild(connectorV(36));
       root.appendChild(rail());
 
-      // Pessoas numa ÚNICA linha (nowrap)
+      // Pessoas em linha única
       const row = document.createElement("div");
       row.className = "people-row";
 
-      data.pessoas.forEach((nome, idxPessoa) => {
+      data.pessoas.forEach((nome, j) => {
         const col = document.createElement("div");
         col.className = "person-col";
 
-        const aberto = !(colapso[idxPessoa]); // default expandido
+        const aberto = !(colapso[j]); // default expandido
 
         const pessoaCard = document.createElement("div");
         pessoaCard.className = "org-card org-person";
         pessoaCard.innerHTML = `
           <div class="label-muted">PESSOA</div>
           <div class="editable" contenteditable="${editMode}"
-               oninput="updateNome(${idxPessoa}, this.innerText)">${nome}</div>
-          ${editMode ? `<span class="xbtn" title="Remover" onclick="event.stopPropagation(); removerPessoa(${idxPessoa})">❌</span>` : ""}
+               oninput="updateNome(${j}, this.innerText)">${nome}</div>
+          ${editMode ? `<span class="xbtn" title="Remover" onclick="event.stopPropagation(); removerPessoa(${j})">❌</span>` : ""}
+          ${editMode ? `<input type="color" class="colorpick" value="${colors.pessoas[j] || '#e7f2fb'}"
+                onclick="event.stopPropagation();" onchange="updateColor('pessoa', ${j}, null, this.value)">` : ""}
           <span class="chev">${aberto ? "▾" : "▸"}</span>
         `;
         pessoaCard.addEventListener("click", () => {
-          colapso[idxPessoa] = !colapso[idxPessoa];
-          persistCollapse();
+          colapso[j] = !colapso[j];
+          localStorage.setItem("org-colapso", JSON.stringify(colapso));
           renderChart();
         });
-
+        applyCardColor(pessoaCard, colors.pessoas[j]);
         col.appendChild(pessoaCard);
 
         // Conector pessoa->pilares
@@ -204,9 +289,10 @@
         const pilha = document.createElement("div");
         pilha.className = "stack";
 
-        // >>> SEMPRE MOSTRA TODOS OS PILARES <<<
+        // Sempre mostra TODOS os pilares
         data.pilares.forEach((pilarNome, i) => {
-          const atividade = (data.atividades[i] || [])[idxPessoa] ?? "";
+          const atividade = (data.atividades[i] || [])[j] ?? "";
+
           const bloco = document.createElement("div");
           bloco.className = "org-subcard";
           bloco.innerHTML = `
@@ -214,10 +300,13 @@
             <div class="editable" contenteditable="${editMode}"
                  oninput="updatePilar(${i}, this.innerText)">${pilarNome}</div>
             ${editMode ? `<span class="xbtn" title="Remover Pilar" onclick="removerPilar(${i})">🗑️</span>` : ""}
+            ${editMode ? `<input type="color" class="colorpick" value="${(colors.subcards[i] && colors.subcards[i][j]) || '#ffffff'}"
+                 onchange="updateColor('subcard', ${i}, ${j}, this.value)">` : ""}
             <div class="org-activity editable" contenteditable="${editMode}"
-                 oninput="updateAtividade(${i}, ${idxPessoa}, this.innerText)">${atividade}</div>
-            ${editMode ? `<div style="margin-top:6px;"><button onclick="limparAtividade(${i}, ${idxPessoa})">Limpar</button></div>` : ""}
+                 oninput="updateAtividade(${i}, ${j}, this.innerText)">${atividade}</div>
+            ${editMode ? `<div style="margin-top:6px;"><button onclick="limparAtividade(${i}, ${j})">Limpar</button></div>` : ""}
           `;
+          applyCardColor(bloco, colors.subcards[i] && colors.subcards[i][j]);
 
           const holder = document.createElement("div");
           holder.style.display = "flex";
@@ -234,11 +323,8 @@
 
         // Altura colapsável
         requestAnimationFrame(()=>{
-          if (colapso[idxPessoa]) {
-            pilhaWrap.style.maxHeight = "0px";
-          } else {
-            pilhaWrap.style.maxHeight = pilha.scrollHeight + "px";
-          }
+          if (colapso[j]) pilhaWrap.style.maxHeight = "0px";
+          else            pilhaWrap.style.maxHeight = pilha.scrollHeight + "px";
         });
 
         row.appendChild(col);
@@ -253,7 +339,7 @@
       requestAnimationFrame(fitToWidth);
     }
 
-    // ---- Funções auxiliares de UI ----
+    // ---- UI helpers ----
     function rail(){ const r=document.createElement("div"); r.className="rail"; return r; }
     function connectorV(h){
       const v = document.createElement("div");
@@ -262,31 +348,23 @@
       return v;
     }
 
-    // Ajusta a escala para que TODAS as pessoas caibam em uma única linha,
-    // mantendo o conteúdo centralizado e sem cortes.
+    // Ajuste de escala para caber 100% em uma única linha
     function fitToWidth(){
       const wrapper = document.getElementById("organograma");
-      const fitbox = document.getElementById("fitbox");
-      const outer  = document.getElementById("fitouter");
+      const fitbox  = document.getElementById("fitbox");
+      const outer   = document.getElementById("fitouter");
       if(!wrapper || !fitbox || !outer) return;
 
-      // reseta para medir largura "natural"
       fitbox.style.transform = "scale(1)";
       const naturalW = fitbox.scrollWidth;
       const wrapperW = wrapper.clientWidth;
-
-      // margem de segurança 24px
       const scale = Math.min(1, (wrapperW - 24) / naturalW);
 
-      // Aplica escala
       fitbox.style.transform = `scale(${scale})`;
-
-      // Define largura visual do contêiner externo para centralizar corretamente
-      const visualW = Math.max(0, Math.floor(naturalW * scale));
-      outer.style.width = visualW + "px";
+      outer.style.width = Math.max(0, Math.floor(naturalW * scale)) + "px";
     }
 
-    // ------- Atualizações de estado -------
+    // ===== Atualizações de estado =====
     function toggleEditMode() {
       editMode = !editMode;
       const btn = document.getElementById("edit-mode-btn");
@@ -302,14 +380,32 @@
       data.atividades[i][j] = valor || "";
     }
 
+    // Seleção de cor
+    function updateColor(tipo, a, b, hex){
+      if (tipo === 'team'){
+        colors.team = hex;
+      } else if (tipo === 'pessoa'){
+        colors.pessoas[a] = hex;
+      } else if (tipo === 'subcard'){
+        if (!colors.subcards[a]) colors.subcards[a] = [];
+        colors.subcards[a][b] = hex;
+      }
+      persistColors();
+      renderChart();
+    }
+
     function addPessoa(){
       const nome = prompt("Nome da nova pessoa:");
       if (!nome) return;
       data.pessoas.push(nome);
       data.atividades.forEach(r => r.push(""));
       colapso[data.pessoas.length - 1] = false;
-      persistCollapse();
-      renderChart();
+
+      // cores
+      colors.pessoas.push(null);
+      colors.subcards.forEach(row => row.push(null));
+
+      persistCollapse(); normalizeColors(); renderChart();
     }
 
     function addPilar(){
@@ -318,25 +414,37 @@
       data.pilares.push(nome);
       const nova = data.pessoas.map(()=>"");
       data.atividades.push(nova);
-      renderChart();
+
+      // cores
+      colors.subcards.push(Array(data.pessoas.length).fill(null));
+
+      normalizeColors(); renderChart();
     }
 
     function removerPessoa(index){
       if (!confirm("Remover esta pessoa e suas atividades?")) return;
       data.pessoas.splice(index,1);
       data.atividades.forEach(r=>r.splice(index,1));
-      // Reindexa colapso
+
+      // cores
+      colors.pessoas.splice(index,1);
+      colors.subcards.forEach(r=>r.splice(index,1));
+
+      // reindexa colapso
       const novo = {};
       data.pessoas.forEach((_, idx)=> novo[idx] = colapso[idx] || false);
-      colapso = novo; persistCollapse();
-      renderChart();
+      colapso = novo; persistCollapse(); normalizeColors(); renderChart();
     }
 
     function removerPilar(index){
       if (!confirm("Remover este pilar (todas as atividades nas pessoas)?")) return;
       data.pilares.splice(index,1);
       data.atividades.splice(index,1);
-      renderChart();
+
+      // cores
+      colors.subcards.splice(index,1);
+
+      normalizeColors(); renderChart();
     }
 
     function limparAtividade(i,j){
@@ -352,6 +460,7 @@
 
     // ---- DARK MODE + menu ----
     document.addEventListener("DOMContentLoaded", () => {
+      // Dark mode persistente
       if (localStorage.getItem("dark-mode") === "1") {
         document.body.classList.add("dark-mode");
       }
@@ -362,6 +471,7 @@
           localStorage.setItem("dark-mode", document.body.classList.contains("dark-mode") ? "1" : "");
         });
       }
+
       renderChart();
       window.addEventListener("resize", fitToWidth);
     });

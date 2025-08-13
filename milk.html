@@ -20,10 +20,7 @@
     .custom-controls button.active,
     .custom-controls button:hover { background: #e8e8e8; }
     .color-picker { display: flex; align-items: center; gap: 4px; }
-    .color-circle {
-      width: 24px; height: 24px; border-radius: 50%; border: 2px solid #ddd; cursor: pointer;
-      margin-right: 2px; display: inline-block;
-    }
+    .color-circle { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #ddd; cursor: pointer; margin-right: 2px; display: inline-block; }
     .color-circle.selected { border: 3px solid #2196f3; }
     .timer-bar {
       position: fixed; right: 0; top: 0; font-size: 14px; color: #444; z-index: 10;
@@ -35,29 +32,15 @@
       position: relative; min-width: 80px; display: flex; flex-direction: column; align-items: center;
       font-size: 1rem;
     }
-    .custom-label-box .delete-area-btn {
-      position: absolute; top: 2px; right: 7px; color: #b21c1c;
-      background: transparent; border: none; font-size: 22px; cursor: pointer; font-weight: bold;
-    }
-    .custom-label-box .area-title {
-      margin-top: 8px; margin-bottom: 3px; font-size: 1.05rem; font-weight: 600;
-      background: #e9f7fa; padding: 3px 10px; border-radius: 6px; border: 1px solid #b8d0db;
-      color: #118; display: inline-block;
-    }
+    .custom-label-box .delete-area-btn { position: absolute; top: 2px; right: 7px; color: #b21c1c; background: transparent; border: none; font-size: 22px; cursor: pointer; font-weight: bold; }
+    .custom-label-box .area-title { margin-top: 8px; margin-bottom: 3px; font-size: 1.05rem; font-weight: 600; background: #e9f7fa; padding: 3px 10px; border-radius: 6px; border: 1px solid #b8d0db; color: #118; display: inline-block; }
     .custom-label-box .area-parent { font-size: 0.9em; color: #757575; margin-top: 2px; }
-    .footer { position: fixed; left: 0; bottom: 0; width: 100vw; z-index: 99;
-      background: rgba(10,16,30,0.94); box-shadow: 0 -4px 24px #0003; color: #fff; }
+    .footer { position: fixed; left: 0; bottom: 0; width: 100vw; z-index: 99; background: rgba(10,16,30,0.94); box-shadow: 0 -4px 24px #0003; color: #fff; }
     .sidebar { z-index: 20; display: block !important; }
 
     /* Modais genéricos */
-    .modal-bg {
-      display:none; position:fixed; z-index:1001; left:0;top:0;width:100vw;height:100vh;
-      background:rgba(0,0,0,0.24); align-items:center; justify-content:center;
-    }
-    .modal {
-      background: #fff; border-radius: 10px; padding: 24px 20px 20px 20px; min-width:340px; box-shadow: 0 8px 40px #0005; position:relative; color: #000; 
-      max-height: 80vh; overflow:auto;
-    }
+    .modal-bg { display:none; position:fixed; z-index:1001; left:0;top:0;width:100vw;height:100vh; background:rgba(0,0,0,0.24); align-items:center; justify-content:center; }
+    .modal { background: #fff; border-radius: 10px; padding: 24px 20px 20px 20px; min-width:340px; box-shadow: 0 8px 40px #0005; position:relative; color: #000; max-height: 80vh; overflow:auto; }
     .modal h3 { margin-top:0; }
     .modal-close { position:absolute; top:12px; right:18px; font-size:20px; background:none; border:none; color:#b21c1c; cursor:pointer;}
     .modal label {display:block; margin: 10px 0 4px 0; font-weight:500;}
@@ -65,39 +48,23 @@
 
     /* Lista arrastável de entregas */
     .drag-list { list-style: none; padding: 0; margin: 8px 0; }
-    .drag-item {
-      display: flex; align-items: center; justify-content: space-between; gap: 10px;
-      padding: 10px 12px; border: 1px solid #e1e1e1; border-radius: 8px; background: #fff;
-      margin-bottom: 8px; cursor: grab;
-    }
+    .drag-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid #e1e1e1; border-radius: 8px; background: #fff; margin-bottom: 8px; cursor: grab; }
     .drag-item:active { cursor: grabbing; }
     .drag-item .left { display: flex; align-items: center; gap: 10px; }
     .handle { font-size: 18px; user-select: none; }
     .pill { background:#eef4ff; border:1px solid #cddfff; padding:2px 8px; border-radius:999px; font-size:.9em; color:#23488b; }
     .pill-ok { background:#e6f7ec; border:1px solid #bfe7c9; color:#256c30; }
-    .danger-btn {
-      background:#c32c2c; color:#fff; padding:6px 10px; border:none; border-radius:6px; cursor:pointer;
-    }
-    .ok-btn {
-      background:#2196f3; color:#fff; padding:8px 18px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;
-    }
+    .danger-btn { background:#c32c2c; color:#fff; padding:6px 10px; border:none; border-radius:6px; cursor:pointer; }
+    .ok-btn { background:#2196f3; color:#fff; padding:8px 18px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; }
 
     /* Modal Versão */
-    #modalVersaoBg { display:none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.24); align-items: center; justify-content: center; }
-    #modalVersao {
-      background: #fff; border-radius: 10px; padding: 26px 28px 20px 28px; min-width:340px;
-      box-shadow: 0 8px 40px #0005; position: relative; color: #222; animation: fadeIn .18s; max-width: 94vw;
-    }
+    #modalVersaoBg { display:none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.24); align-items: center; justify-content: center; }
+    #modalVersao { background: #fff; border-radius: 10px; padding: 26px 28px 20px 28px; min-width:340px; box-shadow: 0 8px 40px #0005; position: relative; color: #222; animation: fadeIn .18s; max-width: 94vw; }
     #modalVersao h3 { margin-top:0; color: #23488b; font-size: 1.25em;}
     #modalVersao ul { margin-top: 10px; padding-left: 22px; font-size: 1.04em;}
     #modalVersao .modal-close { position: absolute; top: 10px; right: 14px; font-size: 23px; background: none; border: none; color: #b21c1c; cursor: pointer;}
     @keyframes fadeIn { from { opacity: 0; transform: scale(0.96);} to { opacity: 1; transform: scale(1);} }
-    .footer .versao-btn {
-      border: none; outline: none; background: none; font: inherit; color: inherit; cursor: pointer;
-      border-radius: 30px; padding: 4px 16px; transition: background 0.15s; font-size: 1em; margin-left: 12px;
-      display: inline-block;
-    }
+    .footer .versao-btn { border: none; outline: none; background: none; font: inherit; color: inherit; cursor: pointer; border-radius: 30px; padding: 4px 16px; transition: background 0.15s; font-size: 1em; margin-left: 12px; display: inline-block; }
     .footer .versao-btn:active, .footer .versao-btn:hover { background: #212638; color: #ffda48; box-shadow: 0 0 4px #0072ce30; }
     .versao-btn b { color: #ffe050;} .versao-btn .vnum { color: #6ca3ff; font-weight: 600;}
   </style>
@@ -186,17 +153,17 @@
   <div class="modal-bg" id="modalVersaoBg">
     <div id="modalVersao">
       <button class="modal-close" onclick="document.getElementById('modalVersaoBg').style.display='none'">&times;</button>
-      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.3.0 (Release date: 13/08/25)</span></h3>
+      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.3.1 (Release date: 13/08/25)</span></h3>
       <ul>
-        <li>Status por entrega com cores e ✓ para Entregue.</li>
-        <li>Rota e numeração só consideram não-entregues.</li>
-        <li>Edição de status na tela “Gerenciar Entregas”.</li>
+        <li>Rota estável (sem timers) e sem entregues.</li>
+        <li>Numeração só para não-entregues; entregues mostram ✓.</li>
+        <li>Ajustes de estabilidade nos pins.</li>
       </ul>
     </div>
   </div>
 
   <script>
-    // Timer
+    // Timer simples
     let seconds = 60;
     function updateTimer() {
       document.getElementById('timerValue').textContent = seconds < 10 ? `00:0${seconds}` : `00:${seconds}`;
@@ -216,7 +183,8 @@
     // { placa: string, area: string, order: number, status: string }
     let entregas = [];
     let entregaMarkers = [];
-    let rotaAnimadaPolyline = null;
+    let rotaPolyline = null;           // <— Polyline único e estático
+    let rotaAnimTimer = null;          // legado/cancelamento defensivo
 
     const STATUS = {
       AGUARDANDO: "Aguardando carregamento",
@@ -280,7 +248,7 @@
       });
     }
 
-    /* ===== Util: centro do polígono ===== */
+    /* ===== Util ===== */
     function getPolygonCenter(poly) {
       const path = poly.getPath().getArray();
       const bounds = new google.maps.LatLngBounds();
@@ -288,7 +256,6 @@
       return bounds.getCenter();
     }
 
-    /* ===== Labels de área ===== */
     function closeAllLabels(){ drawnAreas.forEach(({label})=>{ if(label) label.close(); }); }
 
     function createLabelForPolygon(polygon, areaObj) {
@@ -296,7 +263,6 @@
       const content = document.createElement('div');
       content.className = 'custom-label-box';
 
-      // Botão excluir área
       const deleteBtn = document.createElement('button');
       deleteBtn.className = "delete-area-btn";
       deleteBtn.innerHTML = "&#10005;";
@@ -306,13 +272,10 @@
         const areaName = areaObj.name;
         polygon.setMap(null);
         drawnAreas = drawnAreas.filter(a => a.polygon !== polygon);
-        // Remove entregas vinculadas
+        // Remove entregas da área
         const antes = entregas.length;
         entregas = entregas.filter(en => en.area !== areaName);
-        if (antes !== entregas.length) {
-          renumerarEntregas();
-          saveEntregas();
-        }
+        if (antes !== entregas.length) { renumerarEntregas(); saveEntregas(); }
         saveAreasToStorage();
         setTimeout(atualizarPinsEntregas,100);
       };
@@ -330,9 +293,7 @@
         content.appendChild(parentDiv);
       }
 
-      const infowindow = new google.maps.InfoWindow({
-        content, position: center, pixelOffset: new google.maps.Size(0,-8)
-      });
+      const infowindow = new google.maps.InfoWindow({ content, position: center, pixelOffset: new google.maps.Size(0,-8) });
       return infowindow;
     }
 
@@ -368,8 +329,7 @@
       });
 
       function syncAfterEdit(){
-        const c = getPolygonCenter(polygon);
-        label.setPosition(c);
+        label.setPosition(getPolygonCenter(polygon));
         saveAreasToStorage();
         atualizarPinsEntregas();
       }
@@ -383,10 +343,7 @@
           drawnAreas = drawnAreas.filter(a => a.polygon !== polygon);
           const prev = entregas.length;
           entregas = entregas.filter(e => e.area !== removedName);
-          if (prev !== entregas.length) {
-            renumerarEntregas();
-            saveEntregas();
-          }
+          if (prev !== entregas.length) { renumerarEntregas(); saveEntregas(); }
           saveAreasToStorage();
           setTimeout(atualizarPinsEntregas,100);
         }
@@ -406,41 +363,36 @@
       atualizarPinsEntregas();
     }
 
-    /* ===== Helpers ===== */
     function posicaoDeslocada(center, index, total){
       const raio = 15 + Math.min(40, total*4);
-      const ang = (2*Math.PI) * (index/Math.max(1,total));
+      const ang = (2*Math.PI) * (index / Math.max(1,total));
+      const cosLat = Math.cos(center.lat() * Math.PI / 180);
+      const safeCos = Math.abs(cosLat) < 1e-6 ? 1e-6 : cosLat; // evita divisão por ~0
       const dLat = (raio/111320) * Math.cos(ang);
-      const dLng = (raio/(111320*Math.cos(center.lat()*PI/180))) * Math.sin(ang);
+      const dLng = (raio/(111320*safeCos)) * Math.sin(ang);
       return new google.maps.LatLng(center.lat() + dLat, center.lng() + dLng);
     }
-    const PI = Math.PI; // (micro otimização)
 
     /* ===== Pins / Rota ===== */
     function atualizarPinsEntregas(){
-      // Limpa pins e rota
+      // Limpesa
       entregaMarkers.forEach(m => m.setMap(null));
       entregaMarkers = [];
-      if (rotaAnimadaPolyline) { rotaAnimadaPolyline.setMap(null); rotaAnimadaPolyline = null; }
+
+      // Cancela qualquer animação antiga (defensivo)
+      if (rotaAnimTimer) { clearTimeout(rotaAnimTimer); rotaAnimTimer = null; }
+      if (rotaPolyline)  { rotaPolyline.setMap(null); rotaPolyline = null; }
+
       if (!map) return;
 
-      // Índice visual apenas para não-entregues
-      const naoEntreguesOrdenadas = entregas
-        .slice()
-        .sort((a,b)=>a.order-b.order)
-        .filter(e => e.status !== STATUS.ENTREGUE);
-
-      const displayIndex = new Map(); // key -> 1..N
-      naoEntreguesOrdenadas.forEach((e,i)=>{
-        displayIndex.set(`${e.placa}|${e.area}`, i+1);
-      });
+      // Índice visual somente para não-entregues
+      const naoEntreguesOrdenadas = entregas.slice().sort((a,b)=>a.order-b.order).filter(e => e.status !== STATUS.ENTREGUE);
+      const displayIndex = new Map();
+      naoEntreguesOrdenadas.forEach((e,i)=> displayIndex.set(`${e.placa}|${e.area}`, i+1));
 
       // Agrupa por área p/ deslocar pins
       const porArea = {};
-      entregas.forEach(e => {
-        if(!porArea[e.area]) porArea[e.area] = [];
-        porArea[e.area].push(e);
-      });
+      entregas.forEach(e => { (porArea[e.area] ||= []).push(e); });
 
       Object.keys(porArea).forEach(areaName => {
         const area = drawnAreas.find(a => a.data.name === areaName);
@@ -472,7 +424,7 @@
         });
       });
 
-      // Rota: somente não-entregues
+      // === ROTA ESTÁTICA: somente não-entregues ===
       const centrosNaOrdem = naoEntreguesOrdenadas
         .map(e => {
           const area = drawnAreas.find(a => a.data.name === e.area);
@@ -480,39 +432,16 @@
         })
         .filter(Boolean);
 
-      animarPolyline(centrosNaOrdem);
-    }
-
-    function animarPolyline(centers) {
-      if (!centers.length) return;
-      if (rotaAnimadaPolyline) { rotaAnimadaPolyline.setMap(null); rotaAnimadaPolyline = null; }
-      rotaAnimadaPolyline = new google.maps.Polyline({
-        path: [],
-        geodesic: true,
-        strokeColor: "#e53935",
-        strokeOpacity: 0.9,
-        strokeWeight: 4,
-        map
-      });
-
-      const fullPath = [];
-      for (let i = 0; i < centers.length - 1; i++) {
-        const start = centers[i], end = centers[i+1], steps = 40;
-        for (let t = 0; t < steps; t++) {
-          const lat = start.lat() + (end.lat() - start.lat()) * (t/steps);
-          const lng = start.lng() + (end.lng() - start.lng()) * (t/steps);
-          fullPath.push(new google.maps.LatLng(lat, lng));
-        }
+      if (centrosNaOrdem.length >= 2) {
+        rotaPolyline = new google.maps.Polyline({
+          path: centrosNaOrdem,
+          geodesic: true,
+          strokeColor: "#e53935",
+          strokeOpacity: 0.95,
+          strokeWeight: 4,
+          map
+        });
       }
-      if (centers.length) fullPath.push(centers[centers.length-1]);
-
-      let i = 0;
-      (function step(){
-        if (i < fullPath.length) {
-          rotaAnimadaPolyline.getPath().push(fullPath[i++]);
-          setTimeout(step, 8);
-        }
-      })();
     }
 
     /* ===== Cor selecionada ===== */
@@ -654,8 +583,7 @@
 
         const key = `${e.placa}|${e.area}`;
         const numero = idxVisual.get(key);
-        const pill =
-          (e.status === STATUS.ENTREGUE)
+        const pill = (e.status === STATUS.ENTREGUE)
           ? `<span class="pill pill-ok">✓</span>`
           : `<span class="pill">#${numero ?? ''}</span>`;
 
@@ -690,8 +618,8 @@
           if (obj){
             obj.status = select.value;
             saveEntregas();
-            renderEntregasList();
-            atualizarPinsEntregas();
+            renderEntregasList();   // atualiza pílulas
+            atualizarPinsEntregas(); // redesenha pins/rota com segurança
           }
         });
       });
@@ -733,10 +661,7 @@
       entregasList.querySelectorAll('.drag-item').forEach((li, idx)=>{
         const [placa, area] = li.dataset.key.split('|');
         const obj = entregas.find(e => e.placa === placa && e.area === area);
-        if (obj) {
-          obj.order = idx + 1;
-          novos.push(obj);
-        }
+        if (obj) { obj.order = idx + 1; novos.push(obj); }
       });
       entregas = novos;
       saveEntregas();
@@ -782,7 +707,7 @@
       <a href="#">Política de Privacidade</a>
       <a href="#">Termos de Uso</a>
     </nav>
-      <span class="versao">Versão <b>V1.3.0</b></span>
+      <span class="versao">Versão <b>V1.3.1</b></span>
     </div>
   </div>
 </footer>

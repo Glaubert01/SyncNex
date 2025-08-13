@@ -8,59 +8,73 @@
   <link rel="icon" type="image/png" href="assets/syncnex-favicon.png">
   <style>
     /* ===== ORG CHART ===== */
-    .org-wrapper{overflow-x:auto;padding:12px}
-    .org-root{display:flex;flex-direction:column;align-items:center;gap:24px}
+    :root{
+      --line:#2a5f8a;          /* linhas (claro) */
+      --line-dark:#7fb3ff;     /* linhas (dark mode) */
+    }
+    .org-wrapper{padding:12px; overflow-x:hidden; max-width:100%}
+    .org-root{display:flex;flex-direction:column;align-items:center;gap:22px}
 
     .org-card{
-      min-width:200px; max-width:260px; text-align:center;
+      min-width:160px; max-width:240px; text-align:center;
       background:var(--card-bg, #e7f2fb); color:var(--card-fg, #0b3a5b);
       border-radius:14px; padding:12px; font-weight:700;
       box-shadow:0 1px 0 rgba(0,0,0,.08), 0 6px 14px rgba(0,0,0,.06);
     }
     .org-person{
-      cursor:pointer; position:relative; user-select:none;
+      cursor:pointer; user-select:none; position:relative;
     }
-    .org-person .chev{
-      font-weight:800; opacity:.8; margin-left:6px;
-      display:inline-block; transform:translateY(-1px);
-    }
+    .org-person .chev{font-weight:900; opacity:.9; margin-left:6px}
+
     .org-subcard{
       background:#fff; color:#2b2b2b; border-radius:12px; padding:10px 12px;
       font-weight:600; box-shadow:0 1px 0 rgba(0,0,0,.06);
       width:260px; max-width:92vw;
     }
-    .org-activity{
-      font-weight:500; margin-top:8px; padding:8px 10px; border-radius:10px; background:#f6f7fb
-    }
+    .org-activity{font-weight:500; margin-top:8px; padding:8px 10px; border-radius:10px; background:#f6f7fb}
+
     .editable[contenteditable="true"]{outline:2px dashed #88a; border-radius:6px; padding:2px 4px}
     .xbtn{margin-left:6px; cursor:pointer}
 
-    /* Conectores */
-    .connector-v{width:2px; background:#9cb3c6; height:16px; margin:0 auto}
-    .stack{display:flex; flex-direction:column; align-items:center; gap:14px; margin-top:10px}
-    .stack .connector-v{height:12px}
-
-    /* Layout de pessoas (lado a lado), cada coluna com uma pilha vertical de pilares */
-    .people-row{
-      display:flex; gap:48px; justify-content:center; align-items:flex-start;
-      flex-wrap:nowrap; padding:0 12px; min-width:780px;
+    /* Conectores reforçados */
+    .connector-v{
+      width:4px; background:var(--line); height:28px; margin:2px auto; border-radius:2px;
+      box-shadow:0 0 0 1px rgba(0,0,0,.03);
     }
-    .person-col{display:flex; flex-direction:column; align-items:center}
+    .stack{display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:8px}
+    .stack .connector-v{height:18px}
+
+    /* Linha horizontal entre níveis (opcional) */
+    .rail{
+      width:100%; max-width:1100px; height:4px; background:var(--line); border-radius:3px; opacity:.5;
+    }
+
+    /* Pessoas: quebram em várias linhas, centralizadas, sem rolagem horizontal */
+    .people-row{
+      display:flex; flex-wrap:wrap; gap:26px 36px; justify-content:center; align-items:flex-start;
+      width:100%;
+    }
+    .person-col{display:flex; flex-direction:column; align-items:center; padding:2px 4px}
 
     /* Dark mode */
     body.dark-mode .org-card{--card-bg:#124c74; --card-fg:#e6f0f7}
     body.dark-mode .org-subcard{background:#1e2b36; color:#e6f0f7}
     body.dark-mode .org-activity{background:#16222c; color:#cfe2f3}
-    body.dark-mode .connector-v{background:#3a5366}
+    body.dark-mode .connector-v, body.dark-mode .rail{background:var(--line-dark)}
 
-    .label-muted{font-size:11px; font-weight:600; opacity:.8; letter-spacing:.04em}
+    .label-muted{font-size:11px; font-weight:600; opacity:.9; letter-spacing:.04em}
 
     /* Animação colapsável */
     .collapse{
-      overflow:hidden;
-      transition:max-height .25s ease;
-      width:100%;
-      display:block;
+      overflow:hidden; transition:max-height .28s ease; width:100%; display:block;
+    }
+
+    /* Pequenos ajustes responsivos */
+    @media (max-width: 1024px){
+      .org-subcard{width:min(360px, 96vw)}
+    }
+    @media (max-width: 560px){
+      .org-card{min-width:140px}
     }
   </style>
 </head>
@@ -136,8 +150,16 @@
       topo.className = "org-card";
       topo.innerHTML = `<div class="label-muted">EQUIPE</div><div>Staffs GIL</div>`;
       root.appendChild(topo);
-      root.appendChild(connectorV());
 
+      // Conector raiz reforçado
+      root.appendChild(connectorV(36));
+
+      // Linha horizontal suave (apenas decorativa entre níveis)
+      const rail = document.createElement("div");
+      rail.className = "rail";
+      root.appendChild(rail);
+
+      // Pessoas (quebram de linha automaticamente)
       const row = document.createElement("div");
       row.className = "people-row";
 
@@ -145,8 +167,8 @@
         const col = document.createElement("div");
         col.className = "person-col";
 
-        // Cabeçalho da pessoa (clicável para colapsar/expandir)
-        const aberto = !(colapso[idxPessoa]); // default expandido (false = não colapsado)
+        const aberto = !(colapso[idxPessoa]); // default expandido
+
         const pessoaCard = document.createElement("div");
         pessoaCard.className = "org-card org-person";
         pessoaCard.innerHTML = `
@@ -164,9 +186,9 @@
 
         col.appendChild(pessoaCard);
 
-        // Conector
+        // Conector pessoa->pilares
         if (temAlgumConteudoParaPessoa(idxPessoa) || editMode) {
-          col.appendChild(connectorV());
+          col.appendChild(connectorV(24));
         }
 
         // Pilha vertical de pilares (colapsável)
@@ -176,7 +198,6 @@
         const pilha = document.createElement("div");
         pilha.className = "stack";
 
-        // Monta pilares na vertical
         data.pilares.forEach((pilarNome, i) => {
           const atividade = (data.atividades[i] || [])[idxPessoa] || "";
           if (atividade.trim() !== "" || editMode) {
@@ -189,24 +210,25 @@
               ${editMode ? `<span class="xbtn" title="Remover Pilar" onclick="removerPilar(${i})">🗑️</span>` : ""}
               <div class="org-activity editable" contenteditable="${editMode}"
                    oninput="updateAtividade(${i}, ${idxPessoa}, this.innerText)">${atividade}</div>
-              ${editMode ? `<div style="margin-top:6px;">
-                              <button onclick="limparAtividade(${i}, ${idxPessoa})">Limpar</button>
-                            </div>` : ""}
+              ${editMode ? `<div style="margin-top:6px;"><button onclick="limparAtividade(${i}, ${idxPessoa})">Limpar</button></div>` : ""}
             `;
-            const childHolder = document.createElement("div");
-            childHolder.style.display = "flex";
-            childHolder.style.flexDirection = "column";
-            childHolder.style.alignItems = "center";
-            childHolder.appendChild(bloco);
 
-            pilha.appendChild(childHolder);
+            // Conector acima de cada pilar
+            const holder = document.createElement("div");
+            holder.style.display = "flex";
+            holder.style.flexDirection = "column";
+            holder.style.alignItems = "center";
+            holder.appendChild(connectorV(16));
+            holder.appendChild(bloco);
+
+            pilha.appendChild(holder);
           }
         });
 
         pilhaWrap.appendChild(pilha);
         col.appendChild(pilhaWrap);
 
-        // controla altura (animação) conforme aberto/fechado
+        // Altura colapsável
         requestAnimationFrame(()=>{
           if (colapso[idxPessoa]) {
             pilhaWrap.style.maxHeight = "0px";
@@ -226,9 +248,10 @@
       return data.pilares.some((_, i) => ((data.atividades[i]||[])[j]||"").trim() !== "");
     }
 
-    function connectorV(){
+    function connectorV(h){
       const v = document.createElement("div");
       v.className = "connector-v";
+      if (h) v.style.height = h + "px";
       return v;
     }
 
@@ -253,7 +276,6 @@
       if (!nome) return;
       data.pessoas.push(nome);
       data.atividades.forEach(r => r.push(""));
-      // por padrão, pessoa nova começa expandida
       colapso[data.pessoas.length - 1] = false;
       persistCollapse();
       renderChart();
@@ -272,7 +294,6 @@
       if (!confirm("Remover esta pessoa e suas atividades?")) return;
       data.pessoas.splice(index,1);
       data.atividades.forEach(r=>r.splice(index,1));
-      // Recompacta o mapa de colapso
       const novo = {};
       data.pessoas.forEach((_, idx)=> novo[idx] = colapso[idx] || false);
       colapso = novo; persistCollapse();

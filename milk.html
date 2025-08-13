@@ -10,35 +10,27 @@
     html, body { height: 100%; margin: 0; padding: 0; font-family: Roboto, Arial, sans-serif; }
     #map { width: 100vw; height: 100vh; position: absolute; left: 200px; top: 0; z-index: 1; }
     .custom-controls {
-      position: absolute; top: 10px; left: 500px; z-index: 5; display: flex; gap: 12px; flex-wrap: wrap;
+      position: absolute; top: 10px; left: 500px; z-index: 5; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
     }
-    .custom-controls button, .custom-controls input[type="color"] {
+    .custom-controls button, .custom-controls input[type="color"], .custom-controls label {
       padding: 8px 13px; background: #fff; border: 1px solid #ddd; border-radius: 4px;
       font-size: 1rem; cursor: pointer; font-weight: bold; box-shadow: 0 2px 6px #0001;
       transition: background .2s;
     }
-    .custom-controls button.active,
-    .custom-controls button:hover { background: #e8e8e8; }
+    .custom-controls label { display:flex; align-items:center; gap:8px; font-weight:500; cursor: pointer; }
+    .custom-controls input[type="checkbox"]{ transform: scale(1.2); cursor:pointer; }
+    .custom-controls button.active, .custom-controls button:hover { background: #e8e8e8; }
     .color-picker { display: flex; align-items: center; gap: 4px; }
     .color-circle { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #ddd; cursor: pointer; margin-right: 2px; display: inline-block; }
     .color-circle.selected { border: 3px solid #2196f3; }
-    .timer-bar {
-      position: fixed; right: 0; top: 0; font-size: 14px; color: #444; z-index: 10;
-      background: #fafafadb; padding: 2px 8px; border-radius: 0 0 8px 8px; border-bottom: 1px solid #ddd;
-    }
-    .custom-label-box {
-      background: #fff; border-radius: 12px; padding: 6px 16px 14px 16px;
-      box-shadow: 0 2px 10px #0002; border: 1px solid #eee;
-      position: relative; min-width: 80px; display: flex; flex-direction: column; align-items: center;
-      font-size: 1rem;
-    }
+    .timer-bar { position: fixed; right: 0; top: 0; font-size: 14px; color: #444; z-index: 10; background: #fafafadb; padding: 2px 8px; border-radius: 0 0 8px 8px; border-bottom: 1px solid #ddd; }
+    .custom-label-box { background: #fff; border-radius: 12px; padding: 6px 16px 14px 16px; box-shadow: 0 2px 10px #0002; border: 1px solid #eee; position: relative; min-width: 80px; display: flex; flex-direction: column; align-items: center; font-size: 1rem; }
     .custom-label-box .delete-area-btn { position: absolute; top: 2px; right: 7px; color: #b21c1c; background: transparent; border: none; font-size: 22px; cursor: pointer; font-weight: bold; }
     .custom-label-box .area-title { margin-top: 8px; margin-bottom: 3px; font-size: 1.05rem; font-weight: 600; background: #e9f7fa; padding: 3px 10px; border-radius: 6px; border: 1px solid #b8d0db; color: #118; display: inline-block; }
     .custom-label-box .area-parent { font-size: 0.9em; color: #757575; margin-top: 2px; }
     .footer { position: fixed; left: 0; bottom: 0; width: 100vw; z-index: 99; background: rgba(10,16,30,0.94); box-shadow: 0 -4px 24px #0003; color: #fff; }
     .sidebar { z-index: 20; display: block !important; }
 
-    /* Modais genéricos */
     .modal-bg { display:none; position:fixed; z-index:1001; left:0;top:0;width:100vw;height:100vh; background:rgba(0,0,0,0.24); align-items:center; justify-content:center; }
     .modal { background: #fff; border-radius: 10px; padding: 24px 20px 20px 20px; min-width:340px; box-shadow: 0 8px 40px #0005; position:relative; color: #000; max-height: 80vh; overflow:auto; }
     .modal h3 { margin-top:0; }
@@ -46,7 +38,6 @@
     .modal label {display:block; margin: 10px 0 4px 0; font-weight:500;}
     .modal select, .modal input[type="text"] { width:90%; font-size:1rem; padding:6px 8px;}
 
-    /* Lista arrastável de entregas */
     .drag-list { list-style: none; padding: 0; margin: 8px 0; }
     .drag-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid #e1e1e1; border-radius: 8px; background: #fff; margin-bottom: 8px; cursor: grab; }
     .drag-item:active { cursor: grabbing; }
@@ -57,7 +48,6 @@
     .danger-btn { background:#c32c2c; color:#fff; padding:6px 10px; border:none; border-radius:6px; cursor:pointer; }
     .ok-btn { background:#2196f3; color:#fff; padding:8px 18px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; }
 
-    /* Modal Versão */
     #modalVersaoBg { display:none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.24); align-items: center; justify-content: center; }
     #modalVersao { background: #fff; border-radius: 10px; padding: 26px 28px 20px 28px; min-width:340px; box-shadow: 0 8px 40px #0005; position: relative; color: #222; animation: fadeIn .18s; max-width: 94vw; }
     #modalVersao h3 { margin-top:0; color: #23488b; font-size: 1.25em;}
@@ -105,10 +95,13 @@
     </div>
     <button id="drawAreaBtn">Desenhar Área</button>
     <button id="clearBtn">Limpar Áreas</button>
-
-    <!-- Entregas -->
     <button id="incluirPlacaBtn" style="background:#2969b0; color:#fff;">Incluir Placa</button>
     <button id="gerenciarOrdemBtn" style="background:#5c6bc0; color:#fff;">Gerenciar Entregas</button>
+
+    <!-- NOVO: Rotas por ruas -->
+    <label title="Usar menor distância entre as paradas (Google otimiza a ordem)">
+      <input type="checkbox" id="optimizeChk"> Otimizar rota
+    </label>
   </div>
 
   <div id="map"></div>
@@ -153,17 +146,17 @@
   <div class="modal-bg" id="modalVersaoBg">
     <div id="modalVersao">
       <button class="modal-close" onclick="document.getElementById('modalVersaoBg').style.display='none'">&times;</button>
-      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.3.1 (Release date: 13/08/25)</span></h3>
+      <h3>SyncNex <span style="font-weight: 400;color:#6ca3ff;">V1.4.0 (Release date: 13/08/25)</span></h3>
       <ul>
-        <li>Rota estável (sem timers) e sem entregues.</li>
-        <li>Numeração só para não-entregues; entregues mostram ✓.</li>
-        <li>Ajustes de estabilidade nos pins.</li>
+        <li>Rota pelas ruas com Directions API (exclui entregues).</li>
+        <li>Otimização opcional da ordem (menor distância).</li>
+        <li>Numeração dos pins segue a rota atual (visual).</li>
       </ul>
     </div>
   </div>
 
   <script>
-    // Timer simples
+    // Timer
     let seconds = 60;
     function updateTimer() {
       document.getElementById('timerValue').textContent = seconds < 10 ? `00:0${seconds}` : `00:${seconds}`;
@@ -183,8 +176,13 @@
     // { placa: string, area: string, order: number, status: string }
     let entregas = [];
     let entregaMarkers = [];
-    let rotaPolyline = null;           // <— Polyline único e estático
-    let rotaAnimTimer = null;          // legado/cancelamento defensivo
+
+    // DIRECTIONS (rotas por ruas)
+    let directionsService = null;
+    let directionsRenderer = null;
+
+    // Índice visual calculado pela rota (quando otimizada)
+    let visualIndexFromRoute = null;
 
     const STATUS = {
       AGUARDANDO: "Aguardando carregamento",
@@ -202,11 +200,9 @@
       }
     }
 
-    /* ===== Persistência tipo de mapa ===== */
     function salvarTipoMapa(tipo){ localStorage.setItem('tipoMapa', tipo); }
     function lerTipoMapa(){ return localStorage.getItem('tipoMapa') || 'roadmap'; }
 
-    /* ===== Persistência GEOÁREAS ===== */
     function saveAreasToStorage() {
       const areasData = drawnAreas.map(area => ({
         path: area.polygon.getPath().getArray().map(ll => ({lat: ll.lat(), lng: ll.lng()})),
@@ -237,7 +233,6 @@
       } catch(e) { console.warn('Erro carregando áreas salvas', e); }
     }
 
-    /* ===== Persistência ENTREGAS ===== */
     function saveEntregas(){ localStorage.setItem("entregas", JSON.stringify(entregas)); }
     function loadEntregas(){
       const saved = localStorage.getItem("entregas");
@@ -248,7 +243,6 @@
       });
     }
 
-    /* ===== Util ===== */
     function getPolygonCenter(poly) {
       const path = poly.getPath().getArray();
       const bounds = new google.maps.LatLngBounds();
@@ -272,7 +266,6 @@
         const areaName = areaObj.name;
         polygon.setMap(null);
         drawnAreas = drawnAreas.filter(a => a.polygon !== polygon);
-        // Remove entregas da área
         const antes = entregas.length;
         entregas = entregas.filter(en => en.area !== areaName);
         if (antes !== entregas.length) { renumerarEntregas(); saveEntregas(); }
@@ -367,30 +360,29 @@
       const raio = 15 + Math.min(40, total*4);
       const ang = (2*Math.PI) * (index / Math.max(1,total));
       const cosLat = Math.cos(center.lat() * Math.PI / 180);
-      const safeCos = Math.abs(cosLat) < 1e-6 ? 1e-6 : cosLat; // evita divisão por ~0
+      const safeCos = Math.abs(cosLat) < 1e-6 ? 1e-6 : cosLat;
       const dLat = (raio/111320) * Math.cos(ang);
       const dLng = (raio/(111320*safeCos)) * Math.sin(ang);
       return new google.maps.LatLng(center.lat() + dLat, center.lng() + dLng);
     }
 
-    /* ===== Pins / Rota ===== */
     function atualizarPinsEntregas(){
-      // Limpesa
+      // limpar pins
       entregaMarkers.forEach(m => m.setMap(null));
       entregaMarkers = [];
-
-      // Cancela qualquer animação antiga (defensivo)
-      if (rotaAnimTimer) { clearTimeout(rotaAnimTimer); rotaAnimTimer = null; }
-      if (rotaPolyline)  { rotaPolyline.setMap(null); rotaPolyline = null; }
+      // limpar índice visual de rota (será recalculado em buildRoadRoute)
+      visualIndexFromRoute = null;
 
       if (!map) return;
 
-      // Índice visual somente para não-entregues
+      // base: não-entregues pela ordem salva
       const naoEntreguesOrdenadas = entregas.slice().sort((a,b)=>a.order-b.order).filter(e => e.status !== STATUS.ENTREGUE);
+
+      // numeração visual padrão (sem otimização/antes da rota)
       const displayIndex = new Map();
       naoEntreguesOrdenadas.forEach((e,i)=> displayIndex.set(`${e.placa}|${e.area}`, i+1));
 
-      // Agrupa por área p/ deslocar pins
+      // Agrupar por área p/ deslocar pins e desenhar
       const porArea = {};
       entregas.forEach(e => { (porArea[e.area] ||= []).push(e); });
 
@@ -403,12 +395,15 @@
           const pos = posicaoDeslocada(center, i, lista.length);
           const color = statusColor(e.status);
           const key = `${e.placa}|${e.area}`;
-          const labelText = (e.status === STATUS.ENTREGUE) ? "✓" : String(displayIndex.get(key) || "");
+
+          // usa índice da rota (se já existir), senão o padrão
+          const idx = (visualIndexFromRoute && visualIndexFromRoute.get(key)) || displayIndex.get(key) || "";
+          const labelText = (e.status === STATUS.ENTREGUE) ? "✓" : String(idx);
 
           const marker = new google.maps.Marker({
             position: pos,
             map,
-            title: `${e.status === STATUS.ENTREGUE ? '✓' : '#'+(displayIndex.get(key)||'')} • ${e.placa} • ${e.area} • ${e.status}`,
+            title: `${e.status === STATUS.ENTREGUE ? '✓' : '#'+(idx||'')} • ${e.placa} • ${e.area} • ${e.status}`,
             icon: {
               path: google.maps.SymbolPath.CIRCLE,
               fillColor: color,
@@ -418,33 +413,101 @@
               scale: 10
             },
             label: { text: labelText, fontSize: "14px", fontWeight: "700" },
-            zIndex: 200 + (displayIndex.get(key) || 0)
+            zIndex: 200 + (Number(idx) || 0)
           });
           entregaMarkers.push(marker);
         });
       });
 
-      // === ROTA ESTÁTICA: somente não-entregues ===
-      const centrosNaOrdem = naoEntreguesOrdenadas
-        .map(e => {
-          const area = drawnAreas.find(a => a.data.name === e.area);
-          return area ? getPolygonCenter(area.polygon) : null;
-        })
-        .filter(Boolean);
-
-      if (centrosNaOrdem.length >= 2) {
-        rotaPolyline = new google.maps.Polyline({
-          path: centrosNaOrdem,
-          geodesic: true,
-          strokeColor: "#e53935",
-          strokeOpacity: 0.95,
-          strokeWeight: 4,
-          map
-        });
-      }
+      // constrói rota por ruas
+      buildRoadRoute();
     }
 
-    /* ===== Cor selecionada ===== */
+    function buildRoadRoute(){
+      // apaga rota atual
+      if (directionsRenderer) directionsRenderer.set('directions', null);
+
+      const optimize = document.getElementById('optimizeChk')?.checked;
+
+      const naoEntregues = entregas.slice().sort((a,b)=>a.order-b.order).filter(e => e.status !== STATUS.ENTREGUE);
+      if (naoEntregues.length < 2) { visualIndexFromRoute = null; return; }
+
+      // centros das áreas
+      const pontos = [];
+      naoEntregues.forEach(e=>{
+        const area = drawnAreas.find(a => a.data.name === e.area);
+        if (area) pontos.push({ key: `${e.placa}|${e.area}`, latlng: getPolygonCenter(area.polygon) });
+      });
+
+      if (pontos.length < 2) { visualIndexFromRoute = null; return; }
+
+      // Limite de 25 pontos por rota (origem+destino+waypoints)
+      if (pontos.length > 25){
+        // fallback: sem rota por ruas (ou poderíamos fatiar em blocos)
+        visualIndexFromRoute = null;
+        return;
+      }
+
+      const origin = pontos[0].latlng;
+      const destination = pontos[pontos.length-1].latlng;
+      const waypoints = pontos.slice(1, -1).map(p => ({ location: p.latlng, stopover: true }));
+
+      directionsService.route({
+        origin, destination, waypoints,
+        travelMode: google.maps.TravelMode.DRIVING,
+        optimizeWaypoints: !!optimize
+      }, (result, status) => {
+        if (status !== google.maps.DirectionsStatus.OK) {
+          console.warn('Directions falhou:', status);
+          visualIndexFromRoute = null;
+          return;
+        }
+        directionsRenderer.setDirections(result);
+
+        // Monta índice visual pela ordem da rota exibida
+        const order = [0];
+        const wpOrder = (result.routes?.[0]?.waypoint_order) || pontos.slice(1,-1).map((_,i)=>i); // identidade
+        wpOrder.forEach(i => order.push(i+1));
+        order.push(pontos.length-1);
+
+        visualIndexFromRoute = new Map();
+        order.forEach((idx, i) => {
+          const key = pontos[idx].key;
+          visualIndexFromRoute.set(key, i+1);
+        });
+
+        // Atualiza pins com a numeração da rota
+        // (não mexe na ordem salva; é só visual)
+        entregaMarkers.forEach(m => m.setMap(null));
+        entregaMarkers = [];
+        // desenha novamente
+        const porArea = {};
+        entregas.forEach(e => { (porArea[e.area] ||= []).push(e); });
+        Object.keys(porArea).forEach(areaName => {
+          const area = drawnAreas.find(a => a.data.name === areaName);
+          if (!area) return;
+          const center = getPolygonCenter(area.polygon);
+          const lista = porArea[areaName].slice().sort((a,b)=>a.order-b.order);
+          lista.forEach((e, i) => {
+            const pos = posicaoDeslocada(center, i, lista.length);
+            const color = statusColor(e.status);
+            const key = `${e.placa}|${e.area}`;
+            const idx = (visualIndexFromRoute && visualIndexFromRoute.get(key)) || "";
+            const labelText = (e.status === STATUS.ENTREGUE) ? "✓" : String(idx);
+
+            const marker = new google.maps.Marker({
+              position: pos, map,
+              title: `${e.status === STATUS.ENTREGUE ? '✓' : '#'+(idx||'')} • ${e.placa} • ${e.area} • ${e.status}`,
+              icon: { path: google.maps.SymbolPath.CIRCLE, fillColor: color, fillOpacity: 1, strokeColor: "#333", strokeWeight: 1, scale: 10 },
+              label: { text: labelText, fontSize: "14px", fontWeight: "700" },
+              zIndex: 200 + (Number(idx) || 0)
+            });
+            entregaMarkers.push(marker);
+          });
+        });
+      });
+    }
+
     function setPolygonColor(color){
       selectedColor = color;
       if (drawingManager) {
@@ -467,9 +530,11 @@
         setPolygonColor(this.value);
       });
       document.querySelector('.color-circle[data-color="#2196f3"]').classList.add('selected');
+
+      // Recalcular rota quando alternar otimização
+      document.getElementById('optimizeChk').addEventListener('change', buildRoadRoute);
     });
 
-    /* ===== Init Map ===== */
     function initMap() {
       const tipoMapa = lerTipoMapa();
       map = new google.maps.Map(document.getElementById('map'), {
@@ -488,6 +553,17 @@
         }
       });
       drawingManager.setMap(map);
+
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer({
+        map,
+        suppressMarkers: true,
+        polylineOptions: {
+          strokeColor: "#e53935",
+          strokeOpacity: 0.95,
+          strokeWeight: 4
+        }
+      });
 
       document.querySelectorAll('.color-circle, #customColor').forEach(el => {
         el.addEventListener('click', () => setPolygonColor(selectedColor));
@@ -508,7 +584,6 @@
       };
       document.getElementById('clearBtn').onclick = clearAllAreas;
 
-      // Carrega persistências
       if(!loadedAreas){
         loadedAreas = true;
         google.maps.event.addListenerOnce(map, 'idle', function(){
@@ -528,7 +603,7 @@
       }
     }
 
-    /* ===== Modais: Placa ===== */
+    // ===== Modais: Placa =====
     function openModalPlaca(){
       const select = document.getElementById('areaPlaca');
       const geoareas = drawnAreas.map(a=>a.data.name).sort();
@@ -554,7 +629,7 @@
       closeModalPlaca();
     };
 
-    /* ===== Modal: Gestão (drag & drop + status) ===== */
+    // ===== Modal: Gestão (drag & drop + status) =====
     const modalGestao = document.getElementById('modalGestao');
     const entregasList = document.getElementById('entregasList');
 
@@ -568,8 +643,6 @@
 
     function renderEntregasList(){
       const arr = [...entregas].sort((a,b)=>a.order-b.order);
-
-      // Índice visual só para não-entregues
       const naoEntregues = arr.filter(e => e.status !== STATUS.ENTREGUE);
       const idxVisual = new Map();
       naoEntregues.forEach((e,i)=> idxVisual.set(`${e.placa}|${e.area}`, i+1));
@@ -581,8 +654,10 @@
         li.draggable = true;
         li.dataset.key = e.placa + '|' + e.area;
 
+        // se já tiver visualIndexFromRoute (rota otimizada), use-o; senão use idxVisual padrão
         const key = `${e.placa}|${e.area}`;
-        const numero = idxVisual.get(key);
+        const numero = (visualIndexFromRoute && visualIndexFromRoute.get(key)) ?? idxVisual.get(key);
+
         const pill = (e.status === STATUS.ENTREGUE)
           ? `<span class="pill pill-ok">✓</span>`
           : `<span class="pill">#${numero ?? ''}</span>`;
@@ -618,8 +693,8 @@
           if (obj){
             obj.status = select.value;
             saveEntregas();
-            renderEntregasList();   // atualiza pílulas
-            atualizarPinsEntregas(); // redesenha pins/rota com segurança
+            renderEntregasList();
+            atualizarPinsEntregas();
           }
         });
       });
@@ -637,7 +712,6 @@
       entregas.sort((a,b)=>a.order-b.order).forEach((e,i)=> e.order = i+1);
     }
 
-    // Drag & drop nativo
     function wireDragAndDrop(){
       let dragEl = null;
       entregasList.querySelectorAll('.drag-item').forEach(item=>{
@@ -669,13 +743,6 @@
       atualizarPinsEntregas();
     }
 
-    // Fechar modais clicando fora
-    document.querySelectorAll('.modal-bg').forEach(bg=>{
-      bg.addEventListener('click',function(e){
-        if(e.target===bg) bg.style.display='none';
-      });
-    });
-
     // Sidebar responsivo
     const menuToggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');
@@ -687,7 +754,7 @@
     });
   </script>
 
-  <!-- Google Maps -->
+  <!-- Google Maps (habilite também a Directions API no console do Google) -->
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB2Yir6fDl64yd4ddhLyBDkMIjpOYfpTmA&libraries=drawing,geometry&callback=initMap" async defer></script>
 
   <script src="darkmode.js"></script>
@@ -707,7 +774,7 @@
       <a href="#">Política de Privacidade</a>
       <a href="#">Termos de Uso</a>
     </nav>
-      <span class="versao">Versão <b>V1.3.1</b></span>
+      <span class="versao">Versão <b>V1.4.0</b></span>
     </div>
   </div>
 </footer>
